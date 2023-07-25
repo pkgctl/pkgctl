@@ -15,17 +15,25 @@ var help = flag.Bool("help", false, "Show help")
 
 // var version = flag.String("version", "", "Print the version")
 
+const usage = `\
+Usage: pkgctl <command> [options]
+
+Commands:
+  list      List all tools
+  update    Update all tools
+		`
+
 func main() {
 
-	flag.Parse()
-
 	if len(os.Args) < 2 {
-		flag.Usage()
+		fmt.Println(usage)
 		os.Exit(0)
 	}
 
+	flag.Parse()
+
 	if *help {
-		flag.Usage()
+		fmt.Println(usage)
 		os.Exit(0)
 	}
 
