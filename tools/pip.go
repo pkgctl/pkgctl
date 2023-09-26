@@ -16,6 +16,7 @@ type PipTool struct {
 
 var Pip = &PipTool{
 	&BasicTool{
+		ToolID:          "pip",
 		ToolName:        "pip",
 		ToolCmd:         "pip3",
 		ToolDescription: "The Rust toolchain installer",

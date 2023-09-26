@@ -1,6 +1,8 @@
 {
     "cSpell.words": [
+        "cmds",
         "pkgctl",
-        "rustup"
+        "rustup",
+        "stty"
     ]
 }

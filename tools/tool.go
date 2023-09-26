@@ -17,6 +17,7 @@ var toolList = []CliTool{
 }
 
 type CliTool interface {
+	ID() string
 	Name() string
 	Cmd() string
 	Exits() bool
@@ -30,11 +31,16 @@ func List() []CliTool {
 }
 
 type BasicTool struct {
+	ToolID          string
 	ToolName        string
 	ToolCmd         string
 	ToolDescription string
 	UpdateArgs      []string
 	VersionArgs     []string
+}
+
+func (b *BasicTool) ID() string {
+	return b.ToolID
 }
 
 func (b *BasicTool) Name() string {
