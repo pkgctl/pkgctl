@@ -138,67 +138,75 @@ func (c *Commander) Run() error {
 
 	lastLineCount := c.startCmds()
 
-	for {
-		time.Sleep(100 * time.Millisecond)
-		eraseLines(lastLineCount)
-
+	loop(lastLineCount, func(lines, columns int, writer io.Writer) bool {
 		spinner := c.spinner.Next()
 		runningCmdCount := 0
-		currentLineCount := 0
-
-		lines, columns, _ := ioutil.TerminalSize()
 
 		statusLines := len(c.executors) * 2
-
 		maxLines := (lines - statusLines) / len(c.executors)
 
 		for _, executor := range c.executors {
 			finished := executor.cmd.ProcessState != nil
-			var status string
+			executorLogLines := strings.Split(strings.TrimSpace(executor.logBuf.String()), "\n")
+
+			var statusLine string
+
 			if finished {
-				status = "✓"
+				statusLine = "✓"
 			} else {
-				status = spinner
+				statusLine = spinner
 				runningCmdCount += 1
 			}
 
-			fmt.Printf("%v %v\n", status, colors.BLUE+executor.tool.Name()+colors.END)
-			currentLineCount += 1
+			fmt.Fprintf(writer, "%v %v\n", statusLine, colors.BLUE+executor.tool.Name()+colors.END)
 
-			lines := strings.Split(strings.TrimSpace(executor.logBuf.String()), "\n")
-
-			if maxLines > 0 && len(lines) > maxLines {
-				prevLines := len(lines) - maxLines
-				fmt.Printf(colors.YELLOW+"... %v lines omitted ... log file: %v\n"+colors.END, prevLines, executor.logFile.Name())
-				lines = lines[len(lines)-maxLines:]
-				currentLineCount += 1
+			if maxLines > 0 && len(executorLogLines) > maxLines {
+				prevLines := len(executorLogLines) - maxLines
+				fmt.Fprintf(writer, colors.YELLOW+"... %v lines omitted ... log file: %v\n"+colors.END, prevLines, executor.logFile.Name())
+				executorLogLines = executorLogLines[len(executorLogLines)-maxLines:]
 			}
 
-			for _, line := range lines {
+			for _, line := range executorLogLines {
 				if columns > 0 && utf8.RuneCountInString(line) > int(columns) {
 					// TODO this is not correct and only works for ASCII
 					line = line[:columns-4] + "..."
 				}
-				fmt.Println(line)
-				currentLineCount += 1
+				fmt.Fprintln(writer, line)
 			}
 
 		}
 
-		lastLineCount = currentLineCount
-
-		if runningCmdCount == 0 {
-			break
-		}
-	}
+		return runningCmdCount == 0
+	})
 
 	return nil
 }
 
+func loop(initialLineCount int, fn func(int, int, io.Writer) bool) {
+	lastLineCount := initialLineCount
+
+	for {
+		time.Sleep(100 * time.Millisecond)
+		eraseLines(os.Stdout, lastLineCount)
+
+		lines, columns, _ := ioutil.TerminalSize()
+
+		var sb strings.Builder
+		finished := fn(lines, columns, &sb)
+
+		lastLineCount = strings.Count(sb.String(), "\n") + 1
+		fmt.Fprintln(os.Stdout, sb.String())
+
+		if finished {
+			break
+		}
+	}
+}
+
 const ERASE_LINE_STR = "\x1b[1A\x1b[2K"
 
-func eraseLines(num int) {
+func eraseLines(w io.Writer, num int) {
 	for i := 0; i < num; i++ {
-		fmt.Print(ERASE_LINE_STR)
+		fmt.Fprint(w, ERASE_LINE_STR)
 	}
 }
