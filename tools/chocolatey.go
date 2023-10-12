@@ -5,5 +5,6 @@ var Chocolatey = &BasicTool{
 	ToolName:        "Chocolatey",
 	ToolCmd:         "choco",
 	ToolDescription: "The package manager for Windows",
+	UpdateArgs:      []string{"upgrade", "all", "--yes"},
 	VersionArgs:     []string{"version"},
 }
