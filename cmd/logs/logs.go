@@ -63,7 +63,7 @@ func getLogs() {
 	fmt.Fprintf(w, COL_FORMAT, "CMD", "TOOL", "TIME", "LOG FILE", "SIZE")
 
 	for _, logFile := range logFiles {
-		timeAgo := fmt.Sprintf("%vago", duration(time.Since(logFile.Time)))
+		timeAgo := duration(time.Since(logFile.Time))
 		fmt.Fprintf(w, COL_FORMAT, logFile.PkgctlCmd, logFile.ToolID, timeAgo, logFile.Path, logFile.Size)
 	}
 	w.Flush()
@@ -112,6 +112,8 @@ func duration(duration time.Duration) string {
 			s = "hour"
 		case time.Minute:
 			s = "minute"
+		case time.Second:
+			s = "second"
 		default:
 			panic("unknown duration type")
 		}
@@ -137,6 +139,9 @@ func duration(duration time.Duration) string {
 	consume(&cnt, &sb, &duration, day)
 	consume(&cnt, &sb, &duration, time.Hour)
 	consume(&cnt, &sb, &duration, time.Minute)
+	consume(&cnt, &sb, &duration, time.Second)
+
+	sb.WriteString("ago")
 
 	return sb.String()
 }
