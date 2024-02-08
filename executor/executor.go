@@ -152,7 +152,7 @@ func (c *Commander) Run() error {
 			var statusLine string
 
 			if finished {
-				statusLine = "✓"
+				statusLine = colors.GREEN + "✓" + colors.END
 			} else {
 				statusLine = spinner
 				runningCmdCount += 1

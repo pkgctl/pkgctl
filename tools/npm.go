@@ -5,6 +5,6 @@ var Npm = &BasicTool{
 	ToolName:        "NPM",
 	ToolCmd:         "npm",
 	ToolDescription: "the package manager for JavaScript",
-	UpdateArgs:      []string{"update --quiet --global"},
+	UpdateArgs:      []string{"update --global --verbose"},
 	VersionArgs:     []string{"--version"},
 }
