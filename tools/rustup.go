@@ -1,6 +1,9 @@
 package tools
 
-import "regexp"
+import (
+	"fmt"
+	"regexp"
+)
 
 var RustUp = &BasicTool{
 	ToolID:             "rustup",
@@ -22,7 +25,7 @@ func parseRustUpLogForUpdates(logOutput string) ([]Update, error) {
 	updates := []Update{}
 	for _, match := range matches {
 		updates = append(updates, Update{
-			Name:        match[1] + " - " + match[2],
+			Name:        fmt.Sprintf("%s (%s)", match[2], match[1]),
 			FromVersion: match[3],
 			ToVersion:   match[4],
 		})

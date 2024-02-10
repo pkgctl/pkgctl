@@ -130,7 +130,7 @@ func Exec(name string, arg ...string) *exec.Cmd {
 func (b *BasicTool) ParseForUpdates(l logs.LogFile) ([]Update, error) {
 
 	if b.ParseUpdateLogFunc == nil {
-		return []Update{}, nil
+		return nil, nil
 	}
 
 	file, err := l.Open()
