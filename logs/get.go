@@ -21,7 +21,13 @@ func GetAll() ([]LogFile, error) {
 		if file.IsDir() {
 			continue
 		}
-		if logFile, ok := Match(file); ok {
+
+		info, err := file.Info()
+		if err != nil {
+			return nil, err
+		}
+
+		if logFile, ok := Match(info); ok {
 			logsFiles = append(logsFiles, logFile)
 		}
 	}
@@ -29,10 +35,10 @@ func GetAll() ([]LogFile, error) {
 	return logsFiles, nil
 }
 
-func Match(file fs.DirEntry) (LogFile, bool) {
+func Match(fileInfo fs.FileInfo) (LogFile, bool) {
 	re := regexp.MustCompile(`(\w+)\.(\w+)\.(.*?)\.log\.gz`)
 
-	matches := re.FindStringSubmatch(file.Name())
+	matches := re.FindStringSubmatch(fileInfo.Name())
 
 	if len(matches) != 4 {
 		return LogFile{}, false
@@ -44,15 +50,10 @@ func Match(file fs.DirEntry) (LogFile, bool) {
 		return LogFile{}, false
 	}
 
-	fileInfo, err := file.Info()
-
-	if err != nil {
-		return LogFile{}, false
-	}
 	fileInfo.Size()
 
 	return LogFile{
-		Path:      LOG_DIR + string(os.PathSeparator) + file.Name(),
+		Path:      LOG_DIR + string(os.PathSeparator) + fileInfo.Name(),
 		Size:      fileInfo.Size(),
 		PkgctlCmd: matches[1],
 		ToolID:    matches[2],

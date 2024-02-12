@@ -12,8 +12,12 @@ var Brew = &BasicTool{
 	ParseUpdateLogFunc: parseBrewLogForUpdates,
 }
 
+// EXAMPLE LOG OUTPUT
+// ==> Upgrading python-setuptools
+//   69.0.3 -> 69.1.0
+
 func parseBrewLogForUpdates(logOutput string) ([]Update, error) {
-	re := regexp.MustCompile(`(?m)==> Upgrading (\w+)\n\s+(.*?) -> (.*?)\n`)
+	re := regexp.MustCompile(`(?m)^==>\s+Upgrading\s+(\S+)\s+(\S+)\s+->\s+(\S+)\s?`)
 
 	matches := re.FindAllStringSubmatch(logOutput, -1)
 

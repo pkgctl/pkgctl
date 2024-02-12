@@ -7,6 +7,7 @@ import (
 	"runtime/debug"
 
 	"github.com/pkgctl/pkgctl/cmd"
+	"github.com/pkgctl/pkgctl/ioutil/colors"
 )
 
 const usage = `Usage: pkgctl <command> [options]
@@ -19,6 +20,14 @@ Commands:
 `
 
 func main() {
+
+	// Catch all panics, print the stack trace, and show a message to file a bug
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf(colors.RED+"Error: %v\n%s\n"+colors.END, r, string(debug.Stack()))
+			fmt.Println("pkgctl has crashed! Please file a bug at https://github.com/pkgctl/pkgctl/issues")
+		}
+	}()
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "%s\n", usage)
