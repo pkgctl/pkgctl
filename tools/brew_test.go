@@ -6,7 +6,7 @@ import (
 	"github.com/pkgctl/pkgctl/tools"
 )
 
-func TestBrew(t *testing.T) {
+func TestBrewUpdate(t *testing.T) {
 	expectedUpdates := map[string][]tools.Update{
 		"update.brew.2024-02-12T09:04:06-05:00.log.gz": {
 			{

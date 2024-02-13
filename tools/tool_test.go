@@ -24,6 +24,20 @@ func testToolUpdates(t *testing.T, tool tools.CliTool, expectedUpdates map[strin
 				t.Errorf("Expected %d updates, got %d", len(updates), len(parsedUpdates))
 			}
 
+			for i, update := range updates {
+				if parsedUpdates[i].Name != update.Name {
+					t.Errorf("Expected name `%s`, got `%s`", update.Name, parsedUpdates[i].Name)
+				}
+
+				if parsedUpdates[i].FromVersion != update.FromVersion {
+					t.Errorf("Expected from version `%s`, got `%s`", update.FromVersion, parsedUpdates[i].FromVersion)
+				}
+
+				if parsedUpdates[i].ToVersion != update.ToVersion {
+					t.Errorf("Expected to version `%s`, got `%s`", update.ToVersion, parsedUpdates[i].ToVersion)
+				}
+			}
+
 		}
 	})
 }
@@ -33,12 +47,7 @@ func getTestLog(name string) logs.LogFile {
 	wd, _ := os.Getwd()
 	logFile := filepath.Join(wd, "..", "test", "logs", name)
 
-	fileInfo, err := os.Stat(logFile)
-	if err != nil {
-		panic(err)
-	}
-
-	m, ok := logs.Match(fileInfo)
+	m, ok := logs.GetLogFile(logFile)
 	if !ok {
 		panic("Match failed")
 	}

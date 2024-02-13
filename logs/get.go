@@ -1,8 +1,8 @@
 package logs
 
 import (
-	"io/fs"
 	"os"
+	"path/filepath"
 	"regexp"
 	"time"
 )
@@ -22,12 +22,7 @@ func GetAll() ([]LogFile, error) {
 			continue
 		}
 
-		info, err := file.Info()
-		if err != nil {
-			return nil, err
-		}
-
-		if logFile, ok := Match(info); ok {
+		if logFile, ok := GetLogFile(filepath.Join(LOG_DIR, file.Name())); ok {
 			logsFiles = append(logsFiles, logFile)
 		}
 	}
@@ -35,10 +30,17 @@ func GetAll() ([]LogFile, error) {
 	return logsFiles, nil
 }
 
-func Match(fileInfo fs.FileInfo) (LogFile, bool) {
-	re := regexp.MustCompile(`(\w+)\.(\w+)\.(.*?)\.log\.gz`)
+func GetLogFile(path string) (LogFile, bool) {
 
-	matches := re.FindStringSubmatch(fileInfo.Name())
+	fileInfo, err := os.Stat(path)
+
+	if err != nil || fileInfo.IsDir() {
+		return LogFile{}, false
+	}
+
+	fileNameRe := regexp.MustCompile(`^(\w+)\.(\w+)\.(.*?)\.log\.gz$`)
+
+	matches := fileNameRe.FindStringSubmatch(fileInfo.Name())
 
 	if len(matches) != 4 {
 		return LogFile{}, false
@@ -50,10 +52,8 @@ func Match(fileInfo fs.FileInfo) (LogFile, bool) {
 		return LogFile{}, false
 	}
 
-	fileInfo.Size()
-
 	return LogFile{
-		Path:      LOG_DIR + string(os.PathSeparator) + fileInfo.Name(),
+		Path:      path,
 		Size:      fileInfo.Size(),
 		PkgctlCmd: matches[1],
 		ToolID:    matches[2],
