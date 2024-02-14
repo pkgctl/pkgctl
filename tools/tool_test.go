@@ -9,7 +9,7 @@ import (
 	"github.com/pkgctl/pkgctl/tools"
 )
 
-func testToolUpdates(t *testing.T, tool tools.CliTool, expectedUpdates map[string][]tools.Update) {
+func testToolUpdates(t *testing.T, tool tools.Tool, expectedUpdates map[string][]tools.Update) {
 	t.Run(tool.ID(), func(t *testing.T) {
 		for logFilePath, updates := range expectedUpdates {
 

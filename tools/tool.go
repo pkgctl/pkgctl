@@ -11,7 +11,7 @@ import (
 	"github.com/pkgctl/pkgctl/logs"
 )
 
-var toolList = []CliTool{
+var toolList = []Tool{
 	Asdf,
 	Brew,
 	Fisher,
@@ -21,7 +21,7 @@ var toolList = []CliTool{
 	RustUp,
 }
 
-type CliTool interface {
+type Tool interface {
 	ID() string
 	Name() string
 	Cmd() string
@@ -33,7 +33,7 @@ type CliTool interface {
 	ParseForUpdates(logs.LogFile) ([]Update, error)
 }
 
-func Tool(id string) CliTool {
+func GetTool(id string) Tool {
 	for _, tool := range toolList {
 		if tool.ID() == id {
 			return tool
@@ -42,7 +42,7 @@ func Tool(id string) CliTool {
 	return nil
 }
 
-func List() []CliTool {
+func List() []Tool {
 	return toolList
 }
 

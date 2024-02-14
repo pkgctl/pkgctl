@@ -21,7 +21,7 @@ import (
 type executor struct {
 	pkgctlCmd string
 
-	tool tools.CliTool
+	tool tools.Tool
 	cmd  *exec.Cmd
 
 	cmdWait chan error
@@ -34,7 +34,7 @@ type executor struct {
 	logTime time.Time
 }
 
-func newExecutor(pkgctlCmd string, tool tools.CliTool, cmd *exec.Cmd) *executor {
+func newExecutor(pkgctlCmd string, tool tools.Tool, cmd *exec.Cmd) *executor {
 	return &executor{
 		pkgctlCmd: pkgctlCmd,
 		tool:      tool,
@@ -115,7 +115,7 @@ func NewCommander() *Commander {
 	}
 }
 
-func (e *Commander) Add(pkgctlCmd string, tool tools.CliTool, cmdFn func() *exec.Cmd) {
+func (e *Commander) Add(pkgctlCmd string, tool tools.Tool, cmdFn func() *exec.Cmd) {
 	e.executors = append(e.executors, newExecutor(pkgctlCmd, tool, cmdFn()))
 }
 

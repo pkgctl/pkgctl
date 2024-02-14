@@ -99,7 +99,7 @@ func (lc *LogsCmd) printUpdateLogs() {
 	linesPrinted := 0
 
 	for _, logFile := range logFiles {
-		tool := tools.Tool(logFile.ToolID)
+		tool := tools.GetTool(logFile.ToolID)
 		if tool == nil {
 			fmt.Fprintf(os.Stderr, "unknown tool: %s\n", logFile.ToolID)
 			continue
