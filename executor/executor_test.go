@@ -1,6 +1,7 @@
 package executor_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -11,14 +12,16 @@ import (
 func TestPassingCmds(t *testing.T) {
 	tl := GetTool(3)
 
+	ctx := context.Background()
+
 	job := "testUpdateJob"
-	commander := executor.NewCommander()
+	commander := executor.NewCommander(executor.CommanderOptions{ParallelMode: false})
 
 	for _, tool := range tl {
-		commander.Add(job, tool, tool.Update)
+		commander.Add(job, tool, tool.Update(ctx))
 	}
 
-	commander.Run()
+	commander.Run(ctx)
 
 }
 

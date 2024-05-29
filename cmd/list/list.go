@@ -1,6 +1,7 @@
 package list
 
 import (
+	"context"
 	"flag"
 	"fmt"
 
@@ -22,7 +23,7 @@ func (c *ListCommand) Parse(args []string) error {
 	return c.fs.Parse(args)
 }
 
-func (c *ListCommand) Run() error {
+func (c *ListCommand) Run(ctx context.Context) error {
 	list()
 	return nil
 }

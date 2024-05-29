@@ -1,6 +1,7 @@
 package version
 
 import (
+	"context"
 	"flag"
 	"fmt"
 
@@ -8,10 +9,11 @@ import (
 )
 
 const VERSION = "0.1"
+const VERSION_STRING = "pkgctl version " + VERSION
 
 type VersionCommand struct {
-	fs  *flag.FlagSet
-	all bool
+	fs *flag.FlagSet
+	// all bool
 }
 
 func NewVersionCommand() *VersionCommand {
@@ -21,7 +23,7 @@ func NewVersionCommand() *VersionCommand {
 		fs: fs,
 	}
 
-	vc.fs.BoolVar(&vc.all, "all", false, "print versions of all installed tools")
+	// vc.fs.BoolVar(&vc.all, "all", false, "print versions of all installed tools")
 
 	return vc
 }
@@ -30,22 +32,20 @@ func (c *VersionCommand) Parse(args []string) error {
 	return c.fs.Parse(args)
 }
 
-func (c *VersionCommand) Run() error {
-	fmt.Printf("pkgctl version %v\n", VERSION)
+func (c *VersionCommand) Run(ctx context.Context) error {
+	fmt.Println(VERSION_STRING)
 
-	if c.all {
-		list()
-	}
+	listToolVersions()
 
 	return nil
 }
 
-func list() {
-	fmt.Println("\nInstalled tool versions:")
+func listToolVersions() {
+	fmt.Println("\ntools:")
 
 	for _, tool := range tools.List() {
 		if tool.Exits() {
-			fmt.Printf("%s — %s", tool.Name(), tool.Version())
+			fmt.Print(tool.Version())
 		}
 	}
 }

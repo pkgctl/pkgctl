@@ -2,6 +2,7 @@ package tools
 
 import (
 	"compress/gzip"
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -12,12 +13,12 @@ import (
 )
 
 var toolList = []Tool{
-	Asdf,
+	// Asdf,
 	Brew,
-	Fisher,
-	Gem,
-	Npm,
-	Pip,
+	// Fisher,
+	// Gem,
+	// Npm,
+	// Pip,
 	RustUp,
 }
 
@@ -26,7 +27,7 @@ type Tool interface {
 	Name() string
 	Cmd() string
 	Exits() bool
-	Update() *exec.Cmd
+	Update(ctx context.Context) *exec.Cmd
 	Version() string
 	Description() string
 
@@ -103,11 +104,11 @@ func (b *BasicTool) Exits() bool {
 	return err == nil && cmd.ProcessState.ExitCode() == 0
 }
 
-func (b *BasicTool) Update() *exec.Cmd {
+func (b *BasicTool) Update(ctx context.Context) *exec.Cmd {
 	if b.UpdateArgs == nil {
 		return nil
 	}
-	return Exec(b.ToolCmd, b.UpdateArgs...)
+	return ExecContext(ctx, b.ToolCmd, b.UpdateArgs...)
 }
 
 func (b *BasicTool) Version() string {
@@ -117,13 +118,17 @@ func (b *BasicTool) Version() string {
 }
 
 func Exec(name string, arg ...string) *exec.Cmd {
+	return ExecContext(context.Background(), name, arg...)
+}
+
+func ExecContext(ctx context.Context, name string, arg ...string) *exec.Cmd {
 	shell := os.Getenv("SHELL")
 
 	if shell == "" {
-		return exec.Command(name, arg...)
+		return exec.CommandContext(ctx, name, arg...)
 	} else {
 		shellArgs := fmt.Sprintf("%s %s", name, strings.Join(arg, " "))
-		return exec.Command(shell, "-c", shellArgs)
+		return exec.CommandContext(ctx, shell, "-c", shellArgs)
 	}
 }
 

@@ -1,6 +1,7 @@
 package logs
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -57,7 +58,7 @@ func (lc *LogsCmd) Parse(args []string) error {
 	return nil
 }
 
-func (lc *LogsCmd) Run() error {
+func (lc *LogsCmd) Run(ctx context.Context) error {
 
 	switch lc.cmd {
 	case "update":
@@ -101,13 +102,14 @@ func (lc *LogsCmd) printUpdateLogs() {
 	for _, logFile := range logFiles {
 		tool := tools.GetTool(logFile.ToolID)
 		if tool == nil {
-			fmt.Fprintf(os.Stderr, "unknown tool: %s\n", logFile.ToolID)
+			// skip unknown tools
+			// fmt.Fprintf(os.Stderr, "unknown tool: %s\n", logFile.ToolID)
 			continue
 		}
 		// Get the list of updated packages from the log
 		updates, err := tool.ParseForUpdates(logFile)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "unable to parse log %s: %s\n", logFile.Path, err.Error())
+			fmt.Fprintf(os.Stderr, "deleting corrupted log %s: %s\n", logFile.Path, err.Error())
 			// delete the log file
 			os.Remove(logFile.Path)
 			continue

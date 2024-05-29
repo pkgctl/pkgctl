@@ -1,12 +1,16 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"runtime/debug"
+	"syscall"
 
 	"github.com/pkgctl/pkgctl/cmd"
+	"github.com/pkgctl/pkgctl/cmd/version"
 	"github.com/pkgctl/pkgctl/ioutil/colors"
 )
 
@@ -20,6 +24,17 @@ Commands:
 `
 
 func main() {
+
+	ctx := context.Background()
+
+	// // Catch all signals and cancel the context
+	// ctx, cancel := context.WithCancel(ctx)
+	// defer cancel()
+
+	// signals := make(chan os.Signal, 1)
+	// signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+	ctx, cancel := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
 
 	// Catch all panics, print the stack trace, and show a message to file a bug
 	defer func() {
@@ -41,20 +56,15 @@ func main() {
 	var versionFlag bool
 
 	flag.BoolVar(&versionFlag, "version", false, "print the version")
-	flag.Parse() // Scans the arg list and sets up flags. We currently have no global flags
+	flag.Parse() // Scans the arg list and sets up flags.
 
 	if versionFlag {
-		bi, ok := debug.ReadBuildInfo()
-		if ok {
-			fmt.Printf("%+v", bi)
-		}
-
-		fmt.Println("version unknown")
+		fmt.Println(version.VERSION_STRING)
 		os.Exit(0)
 	}
 
+	// Parse the subcommand
 	args := flag.Args()
-
 	command := cmd.CommandList[args[0]]
 
 	if command == nil {
@@ -63,5 +73,5 @@ func main() {
 	}
 
 	command.Parse(args[1:])
-	command.Run()
+	command.Run(ctx)
 }

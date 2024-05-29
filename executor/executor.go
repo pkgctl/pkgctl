@@ -3,12 +3,14 @@ package executor
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -18,7 +20,7 @@ import (
 	"github.com/pkgctl/pkgctl/tools"
 )
 
-type executor struct {
+type Executor struct {
 	pkgctlCmd string
 
 	tool tools.Tool
@@ -29,21 +31,25 @@ type executor struct {
 	logFile   *os.File
 	logWriter *gzip.Writer
 
-	logBuf bytes.Buffer
+	standardStreams bool
+	logBuf          bytes.Buffer
 
-	logTime time.Time
+	mutex     sync.Mutex
+	startTime time.Time
+	endTime   time.Time
 }
 
-func newExecutor(pkgctlCmd string, tool tools.Tool, cmd *exec.Cmd) *executor {
-	return &executor{
-		pkgctlCmd: pkgctlCmd,
-		tool:      tool,
-		cmd:       cmd,
-		cmdWait:   make(chan error),
+func newExecutor(pkgctlCmd string, tool tools.Tool, cmd *exec.Cmd, standardStreams bool) *Executor {
+	return &Executor{
+		pkgctlCmd:       pkgctlCmd,
+		tool:            tool,
+		cmd:             cmd,
+		cmdWait:         make(chan error),
+		standardStreams: standardStreams,
 	}
 }
 
-func (e *executor) Close() {
+func (e *Executor) Close() {
 	if e.logWriter != nil {
 		e.logWriter.Close()
 	}
@@ -52,10 +58,9 @@ func (e *executor) Close() {
 	}
 }
 
-func (e *executor) openLogFiles() error {
-	e.logTime = time.Now()
+func (e *Executor) openLogFiles() error {
 
-	logPath := fmt.Sprintf("%v/%v.%v.%v.log.gz", logs.LOG_DIR, e.pkgctlCmd, e.tool.ID(), e.logTime.Format(time.RFC3339))
+	logPath := fmt.Sprintf("%v/%v.%v.%v.log.gz", logs.LOG_DIR, e.pkgctlCmd, e.tool.ID(), e.startTime.Format(time.RFC3339))
 
 	logFile, err := os.Create(logPath)
 	if err != nil {
@@ -65,13 +70,23 @@ func (e *executor) openLogFiles() error {
 
 	e.logWriter = gzip.NewWriter(e.logFile)
 
-	e.cmd.Stdout = io.MultiWriter(e.logWriter, &e.logBuf)
-	e.cmd.Stderr = io.MultiWriter(e.logWriter, &e.logBuf)
+	if e.standardStreams {
+		// e.cmd.Stdin = os.Stdin
+		e.cmd.Stdout = io.MultiWriter(e.logWriter, os.Stdout)
+		e.cmd.Stderr = io.MultiWriter(e.logWriter, os.Stderr)
+	} else {
+		e.cmd.Stdout = io.MultiWriter(e.logWriter, &e.logBuf)
+		e.cmd.Stderr = io.MultiWriter(e.logWriter, &e.logBuf)
+	}
 
 	return nil
 }
 
-func (e *executor) Start() error {
+func (e *Executor) Start() error {
+	e.mutex.Lock()
+	e.startTime = time.Now()
+	e.mutex.Unlock()
+
 	e.openLogFiles()
 
 	err := e.cmd.Start()
@@ -80,6 +95,10 @@ func (e *executor) Start() error {
 	}
 	go func() {
 		err := e.cmd.Wait()
+		e.mutex.Lock()
+		e.endTime = time.Now()
+		e.mutex.Unlock()
+
 		if err != nil {
 
 			headerExtras, err := json.Marshal(logs.GzipHeaderExtras{
@@ -92,7 +111,6 @@ func (e *executor) Start() error {
 
 			e.logWriter.Extra = headerExtras
 
-		} else {
 		}
 		e.Close()
 
@@ -103,20 +121,56 @@ func (e *executor) Start() error {
 	return nil
 }
 
-type Commander struct {
-	executors []*executor
-
-	spinner ioutil.Spinner
+func (e *Executor) Wait() error {
+	return <-e.cmdWait
 }
 
-func NewCommander() *Commander {
+func (e *Executor) Run() error {
+	e.Start()
+	return e.Wait()
+}
+
+func (e *Executor) Tool() tools.Tool {
+	return e.tool
+}
+
+func (e *Executor) LogFile() *os.File {
+	return e.logFile
+}
+
+func (e *Executor) Duration() time.Duration {
+	if e.startTime.IsZero() || e.endTime.IsZero() {
+		panic(fmt.Sprintf("executor has not started OR finished: %v", e.tool.Name()))
+	}
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
+	return e.endTime.Sub(e.startTime)
+}
+
+type Commander struct {
+	executors []*Executor
+	options   CommanderOptions
+	spinner   ioutil.Spinner
+}
+
+type CommanderOptions struct {
+	ParallelMode bool
+	Prologue     func(*Executor) string
+	Epilogue     func(*Executor) string
+}
+
+func NewCommander(options CommanderOptions) *Commander {
 	return &Commander{
-		executors: make([]*executor, 0),
+		executors: make([]*Executor, 0),
+		options:   options,
 	}
 }
 
-func (e *Commander) Add(pkgctlCmd string, tool tools.Tool, cmdFn func() *exec.Cmd) {
-	e.executors = append(e.executors, newExecutor(pkgctlCmd, tool, cmdFn()))
+func (e *Commander) Add(pkgctlCmd string, tool tools.Tool, cmd *exec.Cmd) {
+	if cmd == nil {
+		panic(fmt.Sprintf("cmd is nil for %v", tool.Name()))
+	}
+	e.executors = append(e.executors, newExecutor(pkgctlCmd, tool, cmd, !e.options.ParallelMode))
 }
 
 func (e *Commander) startCmds() int {
@@ -134,8 +188,33 @@ func (e *Commander) startCmds() int {
 	return started
 }
 
-func (c *Commander) Run() error {
+func (c *Commander) Run(ctx context.Context) {
+	if c.options.ParallelMode {
+		c.runInParallel(ctx)
+	} else {
+		c.runInSeries(ctx)
+	}
+}
 
+func (c *Commander) runInSeries(_ context.Context) {
+	for i, executor := range c.executors {
+		if i > 0 {
+			fmt.Println()
+		}
+		// Symbols: ✓ ✗ ⟳ ↻
+		fmt.Printf(colors.BLUE + "↻ " + c.options.Prologue(executor) + colors.END + "\n")
+		err := executor.Run()
+		var status string
+		if err == nil && executor.cmd.ProcessState.ExitCode() == 0 {
+			status = colors.GREEN + "✓" + colors.END
+		} else {
+			status = colors.RED + "✗" + colors.END
+		}
+		fmt.Printf("%v %v\n", status, c.options.Epilogue(executor))
+	}
+}
+
+func (c *Commander) runInParallel(_ context.Context) {
 	lastLineCount := c.startCmds()
 
 	loop(lastLineCount, func(lines, columns int, writer io.Writer) bool {
@@ -146,14 +225,17 @@ func (c *Commander) Run() error {
 		maxLines := (lines - statusLines) / len(c.executors)
 
 		for _, executor := range c.executors {
-			finished := executor.cmd.ProcessState != nil
 			executorLogLines := strings.Split(strings.TrimSpace(executor.logBuf.String()), "\n")
 
 			var statusLine string
-
-			if finished {
-				statusLine = colors.GREEN + "✓" + colors.END
-			} else {
+			select {
+			case err := <-executor.cmdWait:
+				if err == nil && executor.cmd.ProcessState.ExitCode() == 0 {
+					statusLine = colors.GREEN + "✓" + colors.END
+				} else {
+					statusLine = colors.RED + "✗" + colors.END
+				}
+			default:
 				statusLine = spinner
 				runningCmdCount += 1
 			}
@@ -173,13 +255,11 @@ func (c *Commander) Run() error {
 				}
 				fmt.Fprintln(writer, line)
 			}
-
 		}
 
 		return runningCmdCount == 0
 	})
 
-	return nil
 }
 
 func loop(initialLineCount int, fn func(int, int, io.Writer) bool) {

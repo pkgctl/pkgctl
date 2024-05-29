@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"context"
+
 	"github.com/pkgctl/pkgctl/cmd/list"
 	"github.com/pkgctl/pkgctl/cmd/logs"
 	"github.com/pkgctl/pkgctl/cmd/update"
@@ -9,7 +11,7 @@ import (
 
 type Command interface {
 	Parse([]string) error
-	Run() error
+	Run(context.Context) error
 }
 
 var CommandList = map[string]Command{
