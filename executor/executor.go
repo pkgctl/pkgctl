@@ -10,7 +10,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"unicode/utf8"
 
 	"github.com/pkgctl/pkgctl/ioutil"
 	"github.com/pkgctl/pkgctl/ioutil/colors"
@@ -23,11 +22,29 @@ type Executor struct {
 
 	cmdWait chan error
 
-	output bytes.Buffer
+	output lockedBuffer
 
 	mutex     sync.Mutex
 	startTime time.Time
 	endTime   time.Time
+}
+
+// lockedBuffer is a bytes.Buffer that the render loop can read while a command writes to it.
+type lockedBuffer struct {
+	mutex  sync.Mutex
+	buffer bytes.Buffer
+}
+
+func (b *lockedBuffer) Write(p []byte) (int, error) {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+	return b.buffer.Write(p)
+}
+
+func (b *lockedBuffer) String() string {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+	return b.buffer.String()
 }
 
 func newExecutor(tool tools.Tool, cmd *exec.Cmd, standardStreams bool) *Executor {
@@ -195,17 +212,23 @@ func (c *Commander) runInParallel(_ context.Context) {
 			}
 
 			for _, line := range outputLines {
-				if columns > 0 && utf8.RuneCountInString(line) > int(columns) {
-					// TODO this is not correct and only works for ASCII
-					line = line[:columns-4] + "..."
-				}
-				fmt.Fprintln(writer, line)
+				fmt.Fprintln(writer, truncateLine(line, columns))
 			}
 		}
 
 		return runningCmdCount == 0
 	})
 
+}
+
+// truncateLine cuts line to fit a terminal columns wide, marking the cut with "...".
+func truncateLine(line string, columns int) string {
+	// Counts runes, not display cells, so a line with several wide characters such as emoji can still wrap.
+	runes := []rune(line)
+	if columns <= 0 || len(runes) <= columns {
+		return line
+	}
+	return string(runes[:columns-4]) + "..."
 }
 
 func loop(initialLineCount int, fn func(int, int, io.Writer) bool) {
