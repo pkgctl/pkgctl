@@ -16,10 +16,6 @@ type LogFile struct {
 	PkgctlCmd string
 }
 
-func (l LogFile) Open() (*os.File, error) {
-	return os.Open(l.Path)
-}
-
 type LogWriter struct {
 	file   *os.File
 	writer *gzip.Writer

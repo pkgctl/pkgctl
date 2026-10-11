@@ -5,9 +5,9 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/pkgctl/pkgctl/executor"
-	"github.com/pkgctl/pkgctl/logs"
 	"github.com/pkgctl/pkgctl/tools"
 )
 
@@ -66,10 +66,5 @@ func prologue(e *executor.Executor) string {
 }
 
 func epilogue(e *executor.Executor) string {
-	if logFile, ok := logs.GetLogFile(e.LogFile().Name()); ok {
-		if updates, err := e.Tool().ParseForUpdates(logFile); err == nil {
-			return fmt.Sprintf("%v packages updated in %v", len(updates), e.Duration())
-		}
-	}
-	return ""
+	return fmt.Sprintf("finished in %v", e.Duration().Round(100*time.Millisecond))
 }

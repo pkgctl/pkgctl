@@ -11,20 +11,18 @@ import (
 	"time"
 
 	"github.com/pkgctl/pkgctl/logs"
-	"github.com/pkgctl/pkgctl/tools"
 )
 
 type LogsCmd struct {
 	fs    *flag.FlagSet
 	limit int
-	cmd   string
 }
 
 func NewLogsCmd() *LogsCmd {
 	fs := flag.NewFlagSet("pkgctl logs", flag.ExitOnError)
 
 	fs.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: pkgctl logs [update] [--limit <n>] \n")
+		fmt.Fprintf(os.Stderr, "Usage: pkgctl logs [--limit <n>]\n")
 	}
 
 	gc := &LogsCmd{
@@ -43,14 +41,8 @@ func (lc *LogsCmd) Parse(args []string) error {
 		return err
 	}
 
-	lc.cmd = lc.fs.Arg(0)
-
-	switch lc.cmd {
-	case "update":
-
-	case "":
-	default:
-		fmt.Printf("invalid command '%s'\n", lc.cmd)
+	if lc.fs.NArg() > 0 {
+		fmt.Printf("unexpected argument '%s'\n", lc.fs.Arg(0))
 		lc.fs.Usage()
 		os.Exit(1)
 	}
@@ -59,19 +51,12 @@ func (lc *LogsCmd) Parse(args []string) error {
 }
 
 func (lc *LogsCmd) Run(ctx context.Context) error {
-
-	switch lc.cmd {
-	case "update":
-		lc.printUpdateLogs()
-	default:
-		lc.printLogs()
-	}
-
+	lc.printLogs()
 	return nil
 }
 
 func (lc *LogsCmd) printLogs() {
-	logFiles := getLogs("", lc.limit)
+	logFiles := getLogs(lc.limit)
 	w := new(tabwriter.Writer)
 	// minwidth, tabwidth, padding, padchar, flags
 	w.Init(os.Stdout, 8, 8, 2, '\t', 0)
@@ -87,47 +72,7 @@ func (lc *LogsCmd) printLogs() {
 	fmt.Println("\nview logs: `gzat <log file>`")
 }
 
-func (lc *LogsCmd) printUpdateLogs() {
-	logFiles := getLogs("update", -1)
-
-	w := new(tabwriter.Writer)
-	// minwidth, tabwidth, padding, padchar, flags
-	w.Init(os.Stdout, 8, 8, 2, '\t', 0)
-
-	const COL_FORMAT = "%s\t%s\t%s\t%s\t%s\n"
-	fmt.Fprintf(w, COL_FORMAT, "TOOL", "PACKAGE", "FROM VERSION", "TO VERSION", "TIME")
-
-	linesPrinted := 0
-
-	for _, logFile := range logFiles {
-		tool := tools.GetTool(logFile.ToolID)
-		if tool == nil {
-			// skip unknown tools
-			// fmt.Fprintf(os.Stderr, "unknown tool: %s\n", logFile.ToolID)
-			continue
-		}
-		// Get the list of updated packages from the log
-		updates, err := tool.ParseForUpdates(logFile)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "deleting corrupted log %s: %s\n", logFile.Path, err.Error())
-			// delete the log file
-			os.Remove(logFile.Path)
-			continue
-		}
-
-		for _, update := range updates {
-			linesPrinted++
-			fmt.Fprintf(w, COL_FORMAT, logFile.ToolID, update.Name, update.FromVersion, update.ToVersion, duration(time.Since(logFile.Time)))
-		}
-
-		if lc.limit > 0 && linesPrinted == lc.limit {
-			break
-		}
-	}
-	w.Flush()
-}
-
-func getLogs(cmd string, limit int) []logs.LogFile {
+func getLogs(limit int) []logs.LogFile {
 	logFiles, err := logs.GetAll()
 
 	if err != nil {
@@ -139,17 +84,6 @@ func getLogs(cmd string, limit int) []logs.LogFile {
 	sort.Slice(logFiles, func(i, j int) bool {
 		return logFiles[i].Time.After(logFiles[j].Time)
 	})
-
-	if cmd != "" {
-		// filter by command
-		var filteredLogs []logs.LogFile
-		for _, logFile := range logFiles {
-			if logFile.PkgctlCmd == cmd {
-				filteredLogs = append(filteredLogs, logFile)
-			}
-		}
-		logFiles = filteredLogs
-	}
 
 	// limit the number of logs to display
 	// totalLogs := len(logFiles)

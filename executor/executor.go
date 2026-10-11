@@ -134,10 +134,6 @@ func (e *Executor) Tool() tools.Tool {
 	return e.tool
 }
 
-func (e *Executor) LogFile() *os.File {
-	return e.logFile
-}
-
 func (e *Executor) Duration() time.Duration {
 	if e.startTime.IsZero() || e.endTime.IsZero() {
 		panic(fmt.Sprintf("executor has not started OR finished: %v", e.tool.Name()))
