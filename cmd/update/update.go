@@ -11,8 +11,6 @@ import (
 	"github.com/pkgctl/pkgctl/tools"
 )
 
-const PKGCTL_CMD = "update"
-
 type UpdateCmd struct {
 	fs       *flag.FlagSet
 	parallel bool
@@ -53,7 +51,7 @@ func (c *UpdateCmd) Run(ctx context.Context) error {
 	for _, tool := range tools.List() {
 		cmd := tool.Update(ctx)
 		if tool.Exits() && cmd != nil {
-			commander.Add(PKGCTL_CMD, tool, cmd)
+			commander.Add(tool, cmd)
 		}
 	}
 

@@ -36,13 +36,3 @@ pkgctl update
 ```
 
 ![update](./.github/update.png)
-
-### Logging
-
-`pkgctl` stores logs of all of its actions. This can be useful for debugging or just to see what `pkgctl` has been up to.
-
-```shell
-pkgctl logs
-```
-
-![logs](./.github/logs.png)
