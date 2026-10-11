@@ -34,5 +34,3 @@ Update all packages managed by `pkgctl`'s supported package managers.
 ```shell
 pkgctl update
 ```
-
-![update](./.github/update.png)
