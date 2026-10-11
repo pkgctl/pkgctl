@@ -1,15 +1,11 @@
 package tools
 
 import (
-	"compress/gzip"
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"strings"
-
-	"github.com/pkgctl/pkgctl/logs"
 )
 
 var toolList = []Tool{
@@ -30,27 +26,10 @@ type Tool interface {
 	Update(ctx context.Context) *exec.Cmd
 	Version() string
 	Description() string
-
-	ParseForUpdates(logs.LogFile) ([]Update, error)
-}
-
-func GetTool(id string) Tool {
-	for _, tool := range toolList {
-		if tool.ID() == id {
-			return tool
-		}
-	}
-	return nil
 }
 
 func List() []Tool {
 	return toolList
-}
-
-type Update struct {
-	Name        string
-	FromVersion string
-	ToVersion   string
 }
 
 type BasicTool struct {
@@ -74,8 +53,6 @@ type BasicTool struct {
 	VersionArgs []string
 	// UseShellCommand is a flag to indicate if the tool should be run as a shell command
 	ShellCommand bool
-
-	ParseUpdateLogFunc func(string) ([]Update, error)
 }
 
 func (b *BasicTool) ID() string {
@@ -130,33 +107,4 @@ func ExecContext(ctx context.Context, name string, arg ...string) *exec.Cmd {
 		shellArgs := fmt.Sprintf("%s %s", name, strings.Join(arg, " "))
 		return exec.CommandContext(ctx, shell, "-c", shellArgs)
 	}
-}
-
-func (b *BasicTool) ParseForUpdates(l logs.LogFile) ([]Update, error) {
-
-	if b.ParseUpdateLogFunc == nil {
-		return nil, nil
-	}
-
-	file, err := l.Open()
-
-	if err != nil {
-		return []Update{}, err
-	}
-	defer file.Close()
-
-	gzReader, err := gzip.NewReader(file)
-
-	if err != nil {
-		return []Update{}, err
-	}
-	defer gzReader.Close()
-
-	bytes, err := io.ReadAll(gzReader)
-	if err != nil {
-		return []Update{}, err
-	}
-	output := string(bytes)
-
-	return b.ParseUpdateLogFunc(output)
 }

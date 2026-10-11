@@ -18,7 +18,6 @@ const usage = `Usage: pkgctl <command> [options]
 
 Commands:
   list      List all tools
-  logs      List logs
   update    Update all tools
   version   Print the version
 `

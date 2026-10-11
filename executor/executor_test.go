@@ -14,11 +14,10 @@ func TestPassingCmds(t *testing.T) {
 
 	ctx := context.Background()
 
-	job := "testUpdateJob"
 	commander := executor.NewCommander(executor.CommanderOptions{ParallelMode: false})
 
 	for _, tool := range tl {
-		commander.Add(job, tool, tool.Update(ctx))
+		commander.Add(tool, tool.Update(ctx))
 	}
 
 	commander.Run(ctx)

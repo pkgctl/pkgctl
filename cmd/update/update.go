@@ -5,13 +5,11 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/pkgctl/pkgctl/executor"
-	"github.com/pkgctl/pkgctl/logs"
 	"github.com/pkgctl/pkgctl/tools"
 )
-
-const PKGCTL_CMD = "update"
 
 type UpdateCmd struct {
 	fs       *flag.FlagSet
@@ -53,7 +51,7 @@ func (c *UpdateCmd) Run(ctx context.Context) error {
 	for _, tool := range tools.List() {
 		cmd := tool.Update(ctx)
 		if tool.Exits() && cmd != nil {
-			commander.Add(PKGCTL_CMD, tool, cmd)
+			commander.Add(tool, cmd)
 		}
 	}
 
@@ -66,10 +64,5 @@ func prologue(e *executor.Executor) string {
 }
 
 func epilogue(e *executor.Executor) string {
-	if logFile, ok := logs.GetLogFile(e.LogFile().Name()); ok {
-		if updates, err := e.Tool().ParseForUpdates(logFile); err == nil {
-			return fmt.Sprintf("%v packages updated in %v", len(updates), e.Duration())
-		}
-	}
-	return ""
+	return fmt.Sprintf("finished in %v", e.Duration().Round(100*time.Millisecond))
 }
