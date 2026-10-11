@@ -7,7 +7,7 @@ var Brew = &BasicTool{
 	ToolName:           "Homebrew",
 	ToolCmd:            "brew",
 	ToolDescription:    "The missing package manager for macOS (or Linux)",
-	UpdateArgs:         []string{"upgrade"},
+	UpdateArgs:         []string{"upgrade", "--yes"},
 	VersionArgs:        []string{"--version"},
 	ParseUpdateLogFunc: parseBrewLogForUpdates,
 }
