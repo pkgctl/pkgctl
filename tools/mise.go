@@ -9,7 +9,7 @@ import (
 var Mise = &BasicTool{
 	ToolName:        "mise",
 	ToolCmd:         "mise",
-	UpdateArgs:      []string{"upgrade"},
+	UpdateArgs:      []string{"upgrade", "--global"},
 	VersionArgs:     []string{"version"},
 	ToolDescription: "The front-end to your dev env",
 	ListOutdated:    listMiseOutdated,
