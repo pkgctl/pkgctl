@@ -72,5 +72,13 @@ func main() {
 	}
 
 	command.Parse(args[1:])
-	command.Run(ctx)
+	err := command.Run(ctx)
+	if ctx.Err() != nil {
+		// Interrupted: stop quietly, with the shell's usual status for Ctrl-C.
+		os.Exit(130)
+	}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, colors.RED+"pkgctl: %v\n"+colors.END, err)
+		os.Exit(1)
+	}
 }
