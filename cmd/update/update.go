@@ -50,7 +50,7 @@ func (c *UpdateCmd) Run(ctx context.Context) error {
 
 	for _, tool := range tools.List() {
 		cmd := tool.Update(ctx)
-		if tool.Exits() && cmd != nil {
+		if tool.Exists() && cmd != nil {
 			commander.Add(tool, cmd)
 		}
 	}

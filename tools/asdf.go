@@ -1,7 +1,6 @@
 package tools
 
 var Asdf = &BasicTool{
-	ToolID:          "asdf",
 	ToolName:        "asdf",
 	ToolCmd:         "asdf",
 	UpdateArgs:      []string{"plugin", "update", "--all"},

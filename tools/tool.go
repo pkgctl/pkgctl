@@ -9,20 +9,16 @@ import (
 )
 
 var toolList = []Tool{
-	// Asdf,
+	Asdf,
 	Brew,
-	// Fisher,
-	// Gem,
-	// Npm,
-	// Pip,
+	Fisher,
+	Mise,
 	RustUp,
 }
 
 type Tool interface {
-	ID() string
 	Name() string
-	Cmd() string
-	Exits() bool
+	Exists() bool
 	Update(ctx context.Context) *exec.Cmd
 	Version() string
 	Description() string
@@ -33,9 +29,6 @@ func List() []Tool {
 }
 
 type BasicTool struct {
-	// ToolID is the unique identifier for the tool
-	// eg. "brew"
-	ToolID string
 	// ToolName is the human readable name of the tool
 	// eg. "Homebrew"
 	ToolName string
@@ -51,27 +44,17 @@ type BasicTool struct {
 	// VersionArgs are the arguments to pass to the tool to get the version
 	// eg. []string{"--version"}
 	VersionArgs []string
-	// UseShellCommand is a flag to indicate if the tool should be run as a shell command
-	ShellCommand bool
-}
-
-func (b *BasicTool) ID() string {
-	return b.ToolID
 }
 
 func (b *BasicTool) Name() string {
 	return b.ToolName
 }
 
-func (b *BasicTool) Cmd() string {
-	return b.ToolCmd
-}
-
 func (b *BasicTool) Description() string {
 	return b.ToolDescription
 }
 
-func (b *BasicTool) Exits() bool {
+func (b *BasicTool) Exists() bool {
 	if _, err := exec.LookPath(b.ToolCmd); err == nil {
 		return true
 	}

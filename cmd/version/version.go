@@ -44,7 +44,7 @@ func listToolVersions() {
 	fmt.Println("\ntools:")
 
 	for _, tool := range tools.List() {
-		if tool.Exits() {
+		if tool.Exists() {
 			fmt.Print(tool.Version())
 		}
 	}

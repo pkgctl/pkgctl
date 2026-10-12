@@ -12,10 +12,8 @@ No need to remember the exact command to update a package manager's packages. Ju
 
 - [ASDF](https://asdf-vm.com/)
 - [Fisher](https://github.com/jorgebucaran/fisher)
-- [RubyGem](https://rubygems.org/)
 - [Homebrew](https://brew.sh/)
-- [npm](https://www.npmjs.com/)
-- [pip](https://pypi.org/project/pip/)
+- [mise](https://mise.jdx.dev/)
 - [RustUp](https://rustup.rs/)
 
 ## Installation
