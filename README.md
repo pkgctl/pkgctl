@@ -40,14 +40,24 @@ pkgctl update
 
 ### Outdated Packages
 
-`pkgctl check` asks Homebrew, mise, and rustup which installed packages have a newer version, prints them, and saves the answer. `pkgctl status` lists the saved answer the same way without checking again. `pkgctl status --short` prints only a one-line summary, or nothing when everything is current, so it is quick enough to run whenever a shell starts:
+`pkgctl check` asks Homebrew, mise, and rustup which installed packages have a newer version, prints them, and saves the answer. `pkgctl status` lists the saved answer the same way without checking again. `pkgctl status --short` prints only a one-line summary, or nothing when everything is current, so it is quick enough to run whenever a shell starts. Add it to your shell's startup:
 
 ```fish
-# ~/.config/fish/config.fish
-if status is-interactive
-    pkgctl status --short
-end
+# ~/.config/fish/config.fish, after PATH is set
+status is-interactive; and pkgctl status --short
 ```
+
+```zsh
+# ~/.zshrc
+pkgctl status --short
+```
+
+```bash
+# ~/.bashrc
+[[ $- == *i* ]] && pkgctl status --short
+```
+
+For fish, keep the `is-interactive` check: pkgctl runs tools through `fish -c`, which loads `config.fish` as well.
 
 When `check_interval` has passed since the last check, `pkgctl status` also starts `pkgctl check` in the background, so the line stays current without running `check` yourself. `pkgctl check --if-due` checks only in that case, for running on a schedule. If seven intervals pass without a successful check, `status` says so; run `pkgctl check` to see what's failing.
 
