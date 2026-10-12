@@ -9,6 +9,8 @@ const (
 	GRAY   = "\033[1;37m"
 	END    = "\033[0m"
 
+	BOLD = "\033[1m"
+
 	// DELETE_PREVIOUS_LINE = "\033[1A\033[2K"
 	DELETE_PREVIOUS_LINE = "\x1b[1A\x1b[2K"
 )

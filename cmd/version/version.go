@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 
+	"github.com/pkgctl/pkgctl/ioutil/colors"
 	"github.com/pkgctl/pkgctl/tools"
 )
 
@@ -41,11 +42,11 @@ func (c *VersionCommand) Run(ctx context.Context) error {
 }
 
 func listToolVersions() {
-	fmt.Println("\ntools:")
+	fmt.Println(colors.GREEN + "\ntools:" + colors.END)
 
 	for _, tool := range tools.List() {
 		if tool.Exists() {
-			fmt.Print(tool.Version())
+			fmt.Printf(colors.BOLD+"%v: "+colors.END+"%v", tool.Name(), tool.Version())
 		}
 	}
 }
