@@ -9,16 +9,15 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/pkgctl/pkgctl/config"
 	"github.com/pkgctl/pkgctl/ioutil/colors"
 	"github.com/pkgctl/pkgctl/outdated"
 	"github.com/pkgctl/pkgctl/tools"
 )
 
-// How old the last check can get before status starts a new one in the background.
-const refreshAfter = 24 * time.Hour
-
-// How old the last check can get before status says so; with daily refreshes, it means checks keep failing.
-const staleAfter = 7 * 24 * time.Hour
+// How many check intervals can pass without a successful check before status says so,
+// since with refreshes that often, it means checks keep failing.
+const staleAfterIntervals = 7
 
 type StatusCmd struct {
 	fs    *flag.FlagSet
@@ -51,16 +50,19 @@ func (c *StatusCmd) Parse(args []string) error {
 }
 
 // Run lists the outdated packages the last check found, or with --short only counts them in one line,
-// and adds a line if that check is more than a week old. When the last check is more than a day old,
-// it starts a new one in the background.
+// and adds a line if that check is seven check intervals old. When a check is due, it starts one in the background.
 func (c *StatusCmd) Run(ctx context.Context) error {
+	settings, err := config.Load()
+	if err != nil {
+		return err
+	}
+
 	report, err := outdated.Load()
 	if err != nil {
 		return err
 	}
 
-	age := time.Since(report.CheckedAt)
-	if age > refreshAfter {
+	if settings.CheckDue(report.CheckedAt) {
 		if err := startCheck(); err != nil {
 			return err
 		}
@@ -74,9 +76,9 @@ func (c *StatusCmd) Run(ctx context.Context) error {
 		printDetails(report)
 	}
 
-	if !report.CheckedAt.IsZero() && age > staleAfter {
-		days := int(age.Hours() / 24)
-		fmt.Printf("Last checked %v days ago. Run `pkgctl check` to see what's failing.\n", days)
+	age := time.Since(report.CheckedAt)
+	if !report.CheckedAt.IsZero() && age > staleAfterIntervals*settings.CheckInterval {
+		fmt.Printf("Last checked %v ago. Run `pkgctl check` to see what's failing.\n", formatAge(age))
 	}
 	return nil
 }
@@ -102,6 +104,14 @@ func printDetails(report outdated.Report) {
 	default:
 		fmt.Println(outdated.UpToDate)
 	}
+}
+
+// formatAge renders age in whole hours below two days, and in whole days from there.
+func formatAge(age time.Duration) string {
+	if age < 48*time.Hour {
+		return fmt.Sprintf("%v hours", int(age.Hours()))
+	}
+	return fmt.Sprintf("%v days", int(age.Hours()/24))
 }
 
 // startCheck starts `pkgctl check` with its output discarded, in its own session so it outlives the shell.

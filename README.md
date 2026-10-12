@@ -44,6 +44,18 @@ if status is-interactive
 end
 ```
 
-When the saved answer is more than a day old, `pkgctl status` also starts `pkgctl check` in the background, so the line stays current without running `check` yourself. If the last successful check is more than a week old, `status` says so; run `pkgctl check` to see what's failing.
+When `check_interval` has passed since the last check, `pkgctl status` also starts `pkgctl check` in the background, so the line stays current without running `check` yourself. `pkgctl check --if-due` checks only in that case, for running on a schedule. If seven intervals pass without a successful check, `status` says so; run `pkgctl check` to see what's failing.
 
 `pkgctl update` clears each tool it updates from the saved answer.
+
+## Settings
+
+Settings live in `~/.config/pkgctl/config.json`. The file is optional, and each setting has a default.
+
+```json
+{
+  "check_interval": "1h"
+}
+```
+
+- `check_interval`: how often to check for outdated packages in the background, as a duration such as `30m` or `6h`. Defaults to `24h`.

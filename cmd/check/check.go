@@ -10,16 +10,22 @@ import (
 	"os/exec"
 	"time"
 
+	"github.com/pkgctl/pkgctl/config"
 	"github.com/pkgctl/pkgctl/ioutil/colors"
 	"github.com/pkgctl/pkgctl/outdated"
 	"github.com/pkgctl/pkgctl/tools"
 )
 
 type CheckCmd struct {
-	fs *flag.FlagSet
+	fs    *flag.FlagSet
+	ifDue bool
 }
 
-const usage = "Usage: pkgctl check\n"
+const usage = `Usage: pkgctl check [options]
+
+Options:
+    --if-due Check only if check_interval has passed since the last check
+`
 
 func NewCheckCmd() *CheckCmd {
 	fs := flag.NewFlagSet("pkgctl check", flag.ExitOnError)
@@ -27,9 +33,13 @@ func NewCheckCmd() *CheckCmd {
 		fmt.Fprintf(os.Stderr, "%s\n", usage)
 	}
 
-	return &CheckCmd{
+	checkCmd := &CheckCmd{
 		fs: fs,
 	}
+
+	fs.BoolVar(&checkCmd.ifDue, "if-due", false, "Check only if check_interval has passed since the last check")
+
+	return checkCmd
 }
 
 func (c *CheckCmd) Parse(args []string) error {
@@ -38,8 +48,18 @@ func (c *CheckCmd) Parse(args []string) error {
 
 // Run asks every installed tool that can report outdated packages for them, prints what each found,
 // and saves the report for `pkgctl status`. If any tool fails, the previous report stays in place.
-// If another check is running, Run leaves the report to it.
+// If another check is running, or --if-due is set and no check is due, Run leaves the report alone.
 func (c *CheckCmd) Run(ctx context.Context) error {
+	if c.ifDue {
+		due, err := checkDue()
+		if err != nil {
+			return err
+		}
+		if !due {
+			return nil
+		}
+	}
+
 	lock, err := outdated.LockCheck()
 	if errors.Is(err, outdated.ErrCheckRunning) {
 		fmt.Println("Another check is already running.")
@@ -93,4 +113,17 @@ func withStderr(err error) error {
 		return fmt.Errorf("%w\n%s", err, bytes.TrimSpace(exitErr.Stderr))
 	}
 	return err
+}
+
+func checkDue() (bool, error) {
+	settings, err := config.Load()
+	if err != nil {
+		return false, err
+	}
+
+	report, err := outdated.Load()
+	if err != nil {
+		return false, err
+	}
+	return settings.CheckDue(report.CheckedAt), nil
 }
