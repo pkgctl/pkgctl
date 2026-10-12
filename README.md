@@ -19,8 +19,13 @@ No need to remember the exact command to update a package manager's packages. Ju
 ## Installation
 
 ```shell
-brew tap pkgctl/homebrew
-brew install pkgctl
+brew install pkgctl/tap/pkgctl
+```
+
+To check for outdated packages in the background, also start the service, which runs `pkgctl check --if-due` every 15 minutes:
+
+```shell
+brew services start pkgctl
 ```
 
 ## Features
