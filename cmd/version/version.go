@@ -9,7 +9,7 @@ import (
 	"github.com/pkgctl/pkgctl/tools"
 )
 
-const VERSION = "0.1"
+const VERSION = "0.2.0"
 const VERSION_STRING = "pkgctl version " + VERSION
 
 type VersionCommand struct {
