@@ -20,12 +20,26 @@ type Tool interface {
 	Name() string
 	Exists() bool
 	Update(ctx context.Context) *exec.Cmd
+	// UpdateCommand returns the command line Update runs, for telling the user, such as "rustup update".
+	UpdateCommand() string
+	// ReportsOutdated reports whether Outdated can list the tool's outdated packages.
+	ReportsOutdated() bool
+	// Outdated returns the installed packages that have a newer version available.
+	// Call it only when ReportsOutdated is true.
+	Outdated(ctx context.Context) ([]Package, error)
 	Version() string
 	Description() string
 }
 
 func List() []Tool {
 	return toolList
+}
+
+// Package is an installed package that has a newer version available.
+type Package struct {
+	Name    string
+	Current string
+	Latest  string
 }
 
 type BasicTool struct {
@@ -44,6 +58,9 @@ type BasicTool struct {
 	// VersionArgs are the arguments to pass to the tool to get the version
 	// eg. []string{"--version"}
 	VersionArgs []string
+	// ListOutdated lists the installed packages that have a newer version available,
+	// or is nil if the tool can't report them
+	ListOutdated func(ctx context.Context) ([]Package, error)
 }
 
 func (b *BasicTool) Name() string {
@@ -69,6 +86,18 @@ func (b *BasicTool) Update(ctx context.Context) *exec.Cmd {
 		return nil
 	}
 	return ExecContext(ctx, b.ToolCmd, b.UpdateArgs...)
+}
+
+func (b *BasicTool) UpdateCommand() string {
+	return strings.Join(append([]string{b.ToolCmd}, b.UpdateArgs...), " ")
+}
+
+func (b *BasicTool) ReportsOutdated() bool {
+	return b.ListOutdated != nil
+}
+
+func (b *BasicTool) Outdated(ctx context.Context) ([]Package, error) {
+	return b.ListOutdated(ctx)
 }
 
 func (b *BasicTool) Version() string {

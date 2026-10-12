@@ -17,7 +17,9 @@ import (
 const usage = `Usage: pkgctl <command> [options]
 
 Commands:
+  check     Check for outdated packages
   list      List all tools
+  status    Show the outdated packages found by the last check
   update    Update all tools
   version   Print the version
 `
