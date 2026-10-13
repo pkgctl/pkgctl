@@ -36,6 +36,7 @@ func List() []Tool {
 }
 
 // Package is an installed package that has a newer version available.
+// Current and Latest are empty for a tool that doesn't track versions, such as Fisher.
 type Package struct {
 	Name    string
 	Current string
@@ -49,6 +50,9 @@ type BasicTool struct {
 	// ToolCmd is the command to run the tool
 	// eg. "brew"
 	ToolCmd string
+	// Shell is the shell that defines ToolCmd, for a tool that is a shell function rather than an executable
+	// eg. "fish"; empty runs ToolCmd through $SHELL
+	Shell string
 	// ToolDescription is a short description of the tool
 	// eg. "The missing package manager for macOS (or Linux)"
 	ToolDescription string
@@ -76,7 +80,7 @@ func (b *BasicTool) Exists() bool {
 		return true
 	}
 
-	cmd := Exec(b.ToolCmd, b.VersionArgs...)
+	cmd := b.command(context.Background(), b.VersionArgs...)
 	err := cmd.Run()
 	return err == nil && cmd.ProcessState.ExitCode() == 0
 }
@@ -85,7 +89,7 @@ func (b *BasicTool) Update(ctx context.Context) *exec.Cmd {
 	if b.UpdateArgs == nil {
 		return nil
 	}
-	return ExecContext(ctx, b.ToolCmd, b.UpdateArgs...)
+	return b.command(ctx, b.UpdateArgs...)
 }
 
 func (b *BasicTool) UpdateCommand() string {
@@ -101,13 +105,16 @@ func (b *BasicTool) Outdated(ctx context.Context) ([]Package, error) {
 }
 
 func (b *BasicTool) Version() string {
-	cmd := Exec(b.ToolCmd, b.VersionArgs...)
+	cmd := b.command(context.Background(), b.VersionArgs...)
 	out, _ := cmd.Output()
 	return string(out)
 }
 
-func Exec(name string, arg ...string) *exec.Cmd {
-	return ExecContext(context.Background(), name, arg...)
+func (b *BasicTool) command(ctx context.Context, arg ...string) *exec.Cmd {
+	if b.Shell == "" {
+		return ExecContext(ctx, b.ToolCmd, arg...)
+	}
+	return exec.CommandContext(ctx, b.Shell, "-c", strings.Join(append([]string{b.ToolCmd}, arg...), " "))
 }
 
 func ExecContext(ctx context.Context, name string, arg ...string) *exec.Cmd {

@@ -40,7 +40,7 @@ pkgctl update
 
 ### Outdated Packages
 
-`pkgctl check` asks Homebrew, mise, and rustup which installed packages have a newer version, prints them, and saves the answer. `pkgctl status` lists the saved answer the same way without checking again. `pkgctl status --short` prints only a one-line summary, or nothing when everything is current, so it is quick enough to run whenever a shell starts. Add it to your shell's startup:
+`pkgctl check` asks Fisher, Homebrew, mise, and rustup which installed packages have a newer version, prints them, and saves the answer. `pkgctl status` lists the saved answer the same way without checking again. `pkgctl status --short` prints only a one-line summary, or nothing when everything is current, so it is quick enough to run whenever a shell starts. Add it to your shell's startup:
 
 ```fish
 # ~/.config/fish/config.fish, after PATH is set

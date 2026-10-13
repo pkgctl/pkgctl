@@ -19,3 +19,14 @@ func TestSummary(t *testing.T) {
 		t.Errorf("Expected %q, got %q", expected, summary)
 	}
 }
+
+func TestDescribeWithoutVersions(t *testing.T) {
+	packages := []tools.Package{{Name: "pure-fish/pure"}}
+
+	description := Describe(tools.Fisher, packages)
+
+	expected := "\033[1;33m  pure-fish/pure\033[0m\n\033[1;33m↑\033[0m 1 outdated. Run `fisher update`.\n"
+	if description != expected {
+		t.Errorf("Expected %q, got %q", expected, description)
+	}
+}

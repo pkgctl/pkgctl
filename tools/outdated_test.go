@@ -64,3 +64,30 @@ func TestParseMiseOutdated(t *testing.T) {
 		t.Errorf("Expected %v, got %v", expected, packages)
 	}
 }
+
+func TestGitBlobHash(t *testing.T) {
+	hash := gitBlobHash([]byte("hello\n"))
+
+	if hash != "ce013625030ba8dba906f756967f9e9ca394464a" {
+		t.Errorf("Expected ce013625030ba8dba906f756967f9e9ca394464a, got %v", hash)
+	}
+}
+
+func TestUpstreamFiles(t *testing.T) {
+	tree := []githubTreeEntry{
+		{Path: "README.md", SHA: "readme"},
+		{Path: "functions", SHA: "dir"},
+		{Path: "functions/fisher.fish", SHA: "function"},
+		{Path: "completions/fisher.fish", SHA: "completion"},
+	}
+
+	files := upstreamFiles(tree)
+
+	expected := map[string]string{
+		"functions/fisher.fish":   "function",
+		"completions/fisher.fish": "completion",
+	}
+	if !reflect.DeepEqual(files, expected) {
+		t.Errorf("Expected %v, got %v", expected, files)
+	}
+}
