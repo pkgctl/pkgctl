@@ -60,7 +60,7 @@ func main() {
 	flag.Parse() // Scans the arg list and sets up flags.
 
 	if versionFlag {
-		fmt.Println(version.VERSION_STRING)
+		fmt.Println(version.String())
 		os.Exit(0)
 	}
 

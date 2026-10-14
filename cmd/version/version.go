@@ -4,13 +4,40 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"runtime/debug"
 
 	"github.com/pkgctl/pkgctl/ioutil/colors"
 	"github.com/pkgctl/pkgctl/tools"
 )
 
-const VERSION = "0.2.0"
-const VERSION_STRING = "pkgctl version " + VERSION
+const VERSION = "0.3.0-dev"
+
+// String names the version, and for a build from a git checkout its commit,
+// with "modified" if the checkout had uncommitted changes.
+func String() string {
+	version := "pkgctl version " + VERSION
+
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return version
+	}
+	var revision, modified string
+	for _, setting := range info.Settings {
+		switch setting.Key {
+		case "vcs.revision":
+			revision = setting.Value[:7]
+		case "vcs.modified":
+			modified = setting.Value
+		}
+	}
+	if revision == "" {
+		return version
+	}
+	if modified == "true" {
+		revision += ", modified"
+	}
+	return version + " (" + revision + ")"
+}
 
 type VersionCommand struct {
 	fs *flag.FlagSet
@@ -34,7 +61,7 @@ func (c *VersionCommand) Parse(args []string) error {
 }
 
 func (c *VersionCommand) Run(ctx context.Context) error {
-	fmt.Println(VERSION_STRING)
+	fmt.Println(String())
 
 	listToolVersions()
 
