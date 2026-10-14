@@ -6,11 +6,13 @@ import (
 )
 
 var DotnetTools = &Tool{
-	Name:              ".NET tools",
-	Command:           "dotnet",
-	Description:       "Global tools for the .NET SDK",
-	UpdateArgs:        []string{"tool", "update", "--all", "--global"},
-	UpdatePackageArgs: []string{"tool", "update", "--global"},
+	Name:        ".NET tools",
+	Command:     "dotnet",
+	Description: "Global tools for the .NET SDK",
+	// Minimal verbosity leaves out the SDK's notice that it skips package signature verification, which it does on macOS,
+	// and keeps the line naming each updated tool's old and new version.
+	UpdateArgs:        []string{"tool", "update", "--all", "--global", "--verbosity", "minimal"},
+	UpdatePackageArgs: []string{"tool", "update", "--global", "--verbosity", "minimal"},
 	VersionArgs:       []string{"--version"},
 	ListOutdated:      listDotnetOutdated,
 }
