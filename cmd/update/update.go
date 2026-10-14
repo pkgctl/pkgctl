@@ -74,7 +74,7 @@ func (c *UpdateCmd) Run(ctx context.Context) error {
 // runUpdate runs cmd in the terminal, between a header naming tool and a status line, and returns its error.
 func runUpdate(tool tools.Tool, cmd *exec.Cmd) error {
 	// Symbols: ✓ ✗ ⟳ ↻
-	fmt.Println(colors.BLUE + "↻ " + tool.Name() + colors.END)
+	fmt.Println(colors.Stdout.Header("↻ " + tool.Name()))
 
 	// cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -84,9 +84,9 @@ func runUpdate(tool tools.Tool, cmd *exec.Cmd) error {
 	err := cmd.Run()
 	duration := time.Since(start).Round(100 * time.Millisecond)
 
-	status := colors.GREEN + "✓" + colors.END
+	status := colors.Stdout.Green("✓")
 	if err != nil {
-		status = colors.RED + "✗" + colors.END
+		status = colors.Stdout.Red("✗")
 	}
 	fmt.Printf("%v finished in %v\n", status, duration)
 	return err

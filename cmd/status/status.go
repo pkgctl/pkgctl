@@ -90,7 +90,7 @@ func printDetails(report outdated.Report) {
 		if len(packages) == 0 {
 			continue
 		}
-		fmt.Println(colors.BLUE + tool.Name() + colors.END)
+		fmt.Println(colors.Stdout.Header(tool.Name()))
 		fmt.Print(outdated.Describe(tool, packages))
 		fmt.Println()
 	}
@@ -102,7 +102,7 @@ func printDetails(report outdated.Report) {
 	case report.CheckedAt.IsZero():
 		fmt.Println("No check has run yet; one has started in the background.")
 	default:
-		fmt.Println(outdated.UpToDate)
+		fmt.Println(colors.Stdout.Green("Everything is up to date."))
 	}
 }
 

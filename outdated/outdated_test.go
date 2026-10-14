@@ -14,7 +14,7 @@ func TestSummary(t *testing.T) {
 
 	summary := report.Summary()
 
-	expected := "\033[1;33m3 outdated packages\033[0m (Homebrew 2, rustup 1). Run `pkgctl update`."
+	expected := "3 outdated packages (Homebrew 2, rustup 1). Run `pkgctl update`."
 	if summary != expected {
 		t.Errorf("Expected %q, got %q", expected, summary)
 	}
@@ -25,7 +25,7 @@ func TestDescribeWithoutVersions(t *testing.T) {
 
 	description := Describe(tools.Fisher, packages)
 
-	expected := "\033[1;33m  pure-fish/pure\033[0m\n\033[1;33m↑\033[0m 1 outdated. Run `fisher update`.\n"
+	expected := "  pure-fish/pure\n↑ 1 outdated. Run `fisher update`.\n"
 	if description != expected {
 		t.Errorf("Expected %q, got %q", expected, description)
 	}

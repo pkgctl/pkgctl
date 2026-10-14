@@ -79,14 +79,14 @@ func (c *CheckCmd) Run(ctx context.Context) error {
 			continue
 		}
 
-		fmt.Println(colors.BLUE + "↻ " + tool.Name() + colors.END)
+		fmt.Println(colors.Stdout.Header("↻ " + tool.Name()))
 		packages, err := tool.Outdated(ctx)
 		if err != nil {
 			return fmt.Errorf("checking %v: %w", tool.Name(), withStderr(err))
 		}
 
 		if len(packages) == 0 {
-			fmt.Println(colors.GREEN + "✓" + colors.END + " up to date")
+			fmt.Println(colors.Stdout.Green("✓") + " up to date")
 			continue
 		}
 		report.Packages[tool.Name()] = packages
@@ -101,7 +101,7 @@ func (c *CheckCmd) Run(ctx context.Context) error {
 	if summary := report.Summary(); summary != "" {
 		fmt.Println(summary)
 	} else {
-		fmt.Println(outdated.UpToDate)
+		fmt.Println(colors.Stdout.Green("Everything is up to date."))
 	}
 	return nil
 }

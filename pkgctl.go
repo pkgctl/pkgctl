@@ -40,7 +40,7 @@ func main() {
 	// Catch all panics, print the stack trace, and show a message to file a bug
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Printf(colors.RED+"Error: %v\n%s\n"+colors.END, r, string(debug.Stack()))
+			fmt.Println(colors.Stdout.Red(fmt.Sprintf("Error: %v\n%s", r, debug.Stack())))
 			fmt.Println("pkgctl has crashed! Please file a bug at https://github.com/pkgctl/pkgctl/issues")
 		}
 	}()
@@ -80,7 +80,7 @@ func main() {
 		os.Exit(130)
 	}
 	if err != nil {
-		fmt.Fprintf(os.Stderr, colors.RED+"pkgctl: %v\n"+colors.END, err)
+		fmt.Fprintln(os.Stderr, colors.Stderr.Red("pkgctl: "+err.Error()))
 		os.Exit(1)
 	}
 }

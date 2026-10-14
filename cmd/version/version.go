@@ -69,11 +69,12 @@ func (c *VersionCommand) Run(ctx context.Context) error {
 }
 
 func listToolVersions() {
-	fmt.Println(colors.GREEN + "\ntools:" + colors.END)
+	fmt.Println()
+	fmt.Println(colors.Stdout.Green("tools:"))
 
 	for _, tool := range tools.List() {
 		if tool.Exists() {
-			fmt.Printf(colors.BOLD+"%v: "+colors.END+"%v", tool.Name(), tool.Version())
+			fmt.Printf("%v %v", colors.Stdout.Bold(tool.Name()+":"), tool.Version())
 		}
 	}
 }

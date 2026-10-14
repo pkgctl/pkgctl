@@ -23,9 +23,6 @@ type Report struct {
 	Packages map[string][]tools.Package
 }
 
-// UpToDate is the line to print in place of the summary when nothing is outdated.
-const UpToDate = colors.GREEN + "Everything is up to date." + colors.END
-
 // Summary counts the report's outdated packages in one line, or returns "" if there are none.
 func (r Report) Summary() string {
 	total := 0
@@ -47,20 +44,20 @@ func (r Report) Summary() string {
 	if total == 1 {
 		noun = "package"
 	}
-	return fmt.Sprintf(colors.YELLOW+"%v outdated %v"+colors.END+" (%v). Run `pkgctl update`.", total, noun, strings.Join(counts, ", "))
+	return fmt.Sprintf("%v (%v). Run `pkgctl update`.", colors.Stdout.Yellow(fmt.Sprintf("%v outdated %v", total, noun)), strings.Join(counts, ", "))
 }
 
 // Describe lists tool's outdated packages, one per line, then the command that updates them.
 func Describe(tool tools.Tool, packages []tools.Package) string {
 	var description strings.Builder
 	for _, outdatedPackage := range packages {
-		fmt.Fprintf(&description, colors.YELLOW+"  %v"+colors.END, outdatedPackage.Name)
+		fmt.Fprintf(&description, "  %v", colors.Stdout.Yellow(outdatedPackage.Name))
 		if outdatedPackage.Latest != "" {
 			fmt.Fprintf(&description, " %v → %v", outdatedPackage.Current, outdatedPackage.Latest)
 		}
 		description.WriteString("\n")
 	}
-	fmt.Fprintf(&description, colors.YELLOW+"↑"+colors.END+" %v outdated. Run `%v`.\n", len(packages), tool.UpdateCommand())
+	fmt.Fprintf(&description, "%v %v outdated. Run `%v`.\n", colors.Stdout.Yellow("↑"), len(packages), tool.UpdateCommand())
 	return description.String()
 }
 
