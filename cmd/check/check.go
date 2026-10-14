@@ -1,13 +1,11 @@
 package check
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"os"
-	"os/exec"
 	"time"
 
 	"github.com/pkgctl/pkgctl/config"
@@ -81,7 +79,7 @@ func (c *CheckCmd) Run(ctx context.Context) error {
 
 		packages, err := tool.Outdated(ctx)
 		if err != nil {
-			return fmt.Errorf("checking %v: %w", tool.Name(), withStderr(err))
+			return fmt.Errorf("checking %v: %w", tool.Name(), tools.WithStderr(err))
 		}
 
 		if len(packages) == 0 {
@@ -102,15 +100,6 @@ func (c *CheckCmd) Run(ctx context.Context) error {
 		fmt.Println(summary)
 	}
 	return nil
-}
-
-// withStderr adds a failed command's stderr to its error, which otherwise says only "exit status 1".
-func withStderr(err error) error {
-	var exitErr *exec.ExitError
-	if errors.As(err, &exitErr) && len(exitErr.Stderr) > 0 {
-		return fmt.Errorf("%w\n%s", err, bytes.TrimSpace(exitErr.Stderr))
-	}
-	return err
 }
 
 func checkDue() (bool, error) {

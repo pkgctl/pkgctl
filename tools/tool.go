@@ -1,26 +1,40 @@
 package tools
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
+	"slices"
 	"strings"
 )
 
+// The tools that install runtimes come first, so the package managers after them update the runtimes' new installs.
 var toolList = []Tool{
-	Asdf,
 	Brew,
-	Fisher,
+	Asdf,
 	Mise,
 	RustUp,
+	DotnetTools,
+	Fisher,
+	Gem,
+	GoBinaries,
+	Mas,
+	Npm,
+	Pip,
+	Pipx,
+	Pnpm,
+	Uv,
 }
 
 type Tool interface {
 	Name() string
 	Exists() bool
-	Update(ctx context.Context) *exec.Cmd
-	// UpdateCommand returns the command line Update runs, for telling the user, such as "rustup update".
+	// Update returns the commands that update the tool's packages, to run in order. It returns none if there is nothing to update.
+	Update(ctx context.Context) ([]*exec.Cmd, error)
+	// UpdateCommand returns the command to give the user for updating the tool's packages, such as "rustup update".
 	UpdateCommand() string
 	// ReportsOutdated reports whether Outdated can list the tool's outdated packages.
 	ReportsOutdated() bool
@@ -36,11 +50,14 @@ func List() []Tool {
 }
 
 // Package is an installed package that has a newer version available.
+// Name is what the tool's update command takes, such as a Go binary's package path.
+// DisplayName is the package's name for people when Name isn't one, such as an app's name for its bundle ID, or empty.
 // Current and Latest are empty for a tool that doesn't track versions, such as Fisher.
 type Package struct {
-	Name    string
-	Current string
-	Latest  string
+	Name        string
+	DisplayName string
+	Current     string
+	Latest      string
 }
 
 type BasicTool struct {
@@ -56,9 +73,19 @@ type BasicTool struct {
 	// ToolDescription is a short description of the tool
 	// eg. "The missing package manager for macOS (or Linux)"
 	ToolDescription string
-	// UpdateArgs are the arguments to pass to the tool to update
+	// UpdateArgs are the arguments to pass to the tool to update, or nil to pass the outdated packages
+	// to UpdatePackageArgs instead, for a tool whose command can't update them all, or fails with none installed
 	// eg. []string{"upgrade"}
 	UpdateArgs []string
+	// UpdatePackageArgs are the arguments to pass to the tool, followed by package names, to update those packages
+	// eg. []string{"upgrade"}
+	UpdatePackageArgs []string
+	// UpdateCommands lists the commands that update the tool's packages,
+	// for a tool without one command that updates them all, in place of [BasicTool.UpdateArgs]
+	UpdateCommands func(ctx context.Context) ([]*exec.Cmd, error)
+	// UpdateHint is the command to give the user for a tool with UpdateCommands
+	// eg. "go install <package>@latest"
+	UpdateHint string
 	// VersionArgs are the arguments to pass to the tool to get the version
 	// eg. []string{"--version"}
 	VersionArgs []string
@@ -85,14 +112,32 @@ func (b *BasicTool) Exists() bool {
 	return err == nil && cmd.ProcessState.ExitCode() == 0
 }
 
-func (b *BasicTool) Update(ctx context.Context) *exec.Cmd {
-	if b.UpdateArgs == nil {
-		return nil
+func (b *BasicTool) Update(ctx context.Context) ([]*exec.Cmd, error) {
+	if b.UpdateCommands != nil {
+		return b.UpdateCommands(ctx)
 	}
-	return b.command(ctx, b.UpdateArgs...)
+	if b.UpdateArgs != nil {
+		return []*exec.Cmd{b.command(ctx, b.UpdateArgs...)}, nil
+	}
+
+	packages, err := b.Outdated(ctx)
+	if err != nil || len(packages) == 0 {
+		return nil, err
+	}
+	args := slices.Clone(b.UpdatePackageArgs)
+	for _, outdatedPackage := range packages {
+		args = append(args, outdatedPackage.Name)
+	}
+	return []*exec.Cmd{b.command(ctx, args...)}, nil
 }
 
 func (b *BasicTool) UpdateCommand() string {
+	if b.UpdateHint != "" {
+		return b.UpdateHint
+	}
+	if b.UpdateArgs == nil {
+		return strings.Join(append([]string{b.ToolCmd}, b.UpdatePackageArgs...), " ") + " <packages>"
+	}
 	return strings.Join(append([]string{b.ToolCmd}, b.UpdateArgs...), " ")
 }
 
@@ -126,4 +171,24 @@ func ExecContext(ctx context.Context, name string, arg ...string) *exec.Cmd {
 		shellArgs := fmt.Sprintf("%s %s", name, strings.Join(arg, " "))
 		return exec.CommandContext(ctx, shell, "-c", shellArgs)
 	}
+}
+
+// WithStderr adds a failed command's stderr to its error, which otherwise says only "exit status 1".
+func WithStderr(err error) error {
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) && len(exitErr.Stderr) > 0 {
+		return fmt.Errorf("%w\n%s", err, bytes.TrimSpace(exitErr.Stderr))
+	}
+	return err
+}
+
+// outputAllowingExit returns cmd's output, taking exit status code as success,
+// for a tool that signals outdated packages with it.
+func outputAllowingExit(cmd *exec.Cmd, code int) ([]byte, error) {
+	output, err := cmd.Output()
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) && exitErr.ExitCode() == code {
+		err = nil
+	}
+	return output, err
 }

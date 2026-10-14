@@ -30,3 +30,14 @@ func TestDescribeWithoutVersions(t *testing.T) {
 		t.Errorf("Expected %q, got %q", expected, description)
 	}
 }
+
+func TestDescribeWithDisplayName(t *testing.T) {
+	packages := []tools.Package{{Name: "io.tailscale.ipn.macos", DisplayName: "Tailscale", Current: "1.102.4", Latest: "1.104.1"}}
+
+	description := Describe(tools.Mas, packages)
+
+	expected := "  Tailscale (io.tailscale.ipn.macos) 1.102.4 → 1.104.1\n↑ 1 outdated. Run `mas update`.\n"
+	if description != expected {
+		t.Errorf("Expected %q, got %q", expected, description)
+	}
+}

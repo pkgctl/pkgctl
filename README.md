@@ -10,11 +10,20 @@ No need to remember the exact command to update a package manager's packages. Ju
 
 ## Supported Package Managers
 
+- [.NET global tools](https://learn.microsoft.com/dotnet/core/tools/global-tools)
 - [ASDF](https://asdf-vm.com/)
 - [Fisher](https://github.com/jorgebucaran/fisher)
+- [Go](https://go.dev/ref/mod#go-install), for commands installed with `go install`
 - [Homebrew](https://brew.sh/)
+- [mas](https://github.com/mas-cli/mas)
 - [mise](https://mise.jdx.dev/)
+- [npm](https://www.npmjs.com/)
+- [pip](https://pip.pypa.io/)
+- [pipx](https://pipx.pypa.io/)
+- [pnpm](https://pnpm.io/)
+- [RubyGems](https://rubygems.org/), for the gems that don't ship with Ruby
 - [RustUp](https://rustup.rs/)
+- [uv](https://docs.astral.sh/uv/)
 
 ## Installation
 
@@ -40,7 +49,7 @@ pkgctl update
 
 ### Outdated Packages
 
-`pkgctl check` asks Fisher, Homebrew, mise, and rustup which installed packages have a newer version, prints them, and saves the answer. `pkgctl status` lists the saved answer the same way without checking again. `pkgctl status --short` prints only a one-line summary, or nothing when everything is current, so it is quick enough to run whenever a shell starts. Add it to your shell's startup:
+`pkgctl check` asks every supported package manager except ASDF which installed packages have a newer version, prints them, and saves the answer. `pkgctl status` lists the saved answer the same way without checking again. `pkgctl status --short` prints only a one-line summary, or nothing when everything is current, so it is quick enough to run whenever a shell starts. Add it to your shell's startup:
 
 ```fish
 # ~/.config/fish/config.fish, after PATH is set

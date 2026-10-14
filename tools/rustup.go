@@ -2,8 +2,6 @@ package tools
 
 import (
 	"context"
-	"errors"
-	"os/exec"
 	"regexp"
 )
 
@@ -17,12 +15,8 @@ var RustUp = &BasicTool{
 }
 
 func listRustupOutdated(ctx context.Context) ([]Package, error) {
-	output, err := ExecContext(ctx, "rustup", "check").Output()
 	// rustup check exits 100 when an update is available.
-	var exitErr *exec.ExitError
-	if errors.As(err, &exitErr) && exitErr.ExitCode() == 100 {
-		err = nil
-	}
+	output, err := outputAllowingExit(ExecContext(ctx, "rustup", "check"), 100)
 	if err != nil {
 		return nil, err
 	}

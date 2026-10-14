@@ -51,7 +51,11 @@ func (r Report) Summary() string {
 func Describe(tool tools.Tool, packages []tools.Package) string {
 	var description strings.Builder
 	for _, outdatedPackage := range packages {
-		fmt.Fprintf(&description, "  %v", colors.Stdout.Yellow(outdatedPackage.Name))
+		if outdatedPackage.DisplayName != "" {
+			fmt.Fprintf(&description, "  %v (%v)", colors.Stdout.Yellow(outdatedPackage.DisplayName), outdatedPackage.Name)
+		} else {
+			fmt.Fprintf(&description, "  %v", colors.Stdout.Yellow(outdatedPackage.Name))
+		}
 		if outdatedPackage.Latest != "" {
 			fmt.Fprintf(&description, " %v → %v", outdatedPackage.Current, outdatedPackage.Latest)
 		}

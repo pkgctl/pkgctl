@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"os/exec"
 	"time"
 
 	"github.com/pkgctl/pkgctl/ioutil/colors"
@@ -41,16 +40,14 @@ func (c *UpdateCmd) Run(ctx context.Context) error {
 		if ctx.Err() != nil {
 			break
 		}
-
-		cmd := tool.Update(ctx)
-		if !tool.Exists() || cmd == nil {
+		if !tool.Exists() {
 			continue
 		}
 
 		if ran > 0 {
 			fmt.Println()
 		}
-		if runUpdate(tool, cmd) == nil {
+		if runUpdate(ctx, tool) == nil {
 			updated = append(updated, tool.Name())
 		}
 		ran++
@@ -71,23 +68,36 @@ func (c *UpdateCmd) Run(ctx context.Context) error {
 	return ctx.Err()
 }
 
-// runUpdate runs cmd in the terminal, between a header naming tool and a status line, and returns its error.
-func runUpdate(tool tools.Tool, cmd *exec.Cmd) error {
+// runUpdate updates tool's packages in the terminal, between a header naming tool and a status line, and returns the error.
+func runUpdate(ctx context.Context, tool tools.Tool) error {
 	// Symbols: ✓ ✗ ⟳ ↻
 	fmt.Println(colors.Stdout.Header(tool.Name()))
 
-	// cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
 	start := time.Now()
-	err := cmd.Run()
+	err := update(ctx, tool)
 	duration := time.Since(start).Round(100 * time.Millisecond)
 
-	status := colors.Stdout.Green("✓")
 	if err != nil {
-		status = colors.Stdout.Red("✗")
+		fmt.Printf("%v %v\n", colors.Stdout.Red("✗"), tools.WithStderr(err))
+		return err
 	}
-	fmt.Printf("%v finished in %v\n", status, duration)
-	return err
+	fmt.Printf("%v finished in %v\n", colors.Stdout.Green("✓"), duration)
+	return nil
+}
+
+// update runs the commands that update tool's packages, in order, stopping at the first failure.
+func update(ctx context.Context, tool tools.Tool) error {
+	cmds, err := tool.Update(ctx)
+	if err != nil {
+		return err
+	}
+	for _, cmd := range cmds {
+		// cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
