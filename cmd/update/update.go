@@ -60,28 +60,30 @@ func (c *UpdateCmd) Parse(args []string) error {
 }
 
 func (c *UpdateCmd) Run(ctx context.Context) error {
-	toolsToUpdate := tools.List()
+	candidates := tools.List()
 	if c.tool != nil {
-		if !c.tool.Exists() {
-			return fmt.Errorf("%v isn't installed", c.tool.Name)
+		candidates = []*tools.Tool{c.tool}
+	}
+	var toolsToUpdate []*tools.Tool
+	for _, tool := range candidates {
+		if tool.Exists() {
+			toolsToUpdate = append(toolsToUpdate, tool)
 		}
-		toolsToUpdate = []*tools.Tool{c.tool}
+	}
+	if c.tool != nil && len(toolsToUpdate) == 0 {
+		return fmt.Errorf("%v isn't installed", c.tool.Name)
 	}
 
 	stopRenewing, sudoErr := c.askForSudo(ctx, toolsToUpdate)
 	defer stopRenewing()
 
 	var updated, failed []string
-	ran := 0
-	for _, tool := range toolsToUpdate {
+	for i, tool := range toolsToUpdate {
 		if ctx.Err() != nil {
 			break
 		}
-		if !tool.Exists() {
-			continue
-		}
 
-		if ran > 0 {
+		if i > 0 {
 			fmt.Println()
 		}
 		if runUpdate(ctx, tool, c.packageName, sudoErr) == nil {
@@ -89,7 +91,6 @@ func (c *UpdateCmd) Run(ctx context.Context) error {
 		} else {
 			failed = append(failed, tool.Name)
 		}
-		ran++
 	}
 
 	// A successful update leaves nothing for `pkgctl status` to report until the next check.
@@ -122,7 +123,7 @@ const sudoRenewal = time.Minute
 func (c *UpdateCmd) askForSudo(ctx context.Context, toolsToUpdate []*tools.Tool) (stopRenewing func(), err error) {
 	var needing []string
 	for _, tool := range toolsToUpdate {
-		if !tool.NeedsSudo || !tool.Exists() {
+		if !tool.NeedsSudo {
 			continue
 		}
 		if c.packageName == "" {
