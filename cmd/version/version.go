@@ -10,7 +10,7 @@ import (
 	"github.com/pkgctl/pkgctl/tools"
 )
 
-const VERSION = "0.3.0-dev"
+const VERSION = "0.3.0"
 
 // String names the version, and for a build from a git checkout its commit,
 // with "modified" if the checkout had uncommitted changes.
