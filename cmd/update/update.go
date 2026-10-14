@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"slices"
 	"strings"
 	"time"
 
@@ -118,7 +119,8 @@ func (c *UpdateCmd) Run(ctx context.Context) error {
 const sudoRenewal = time.Minute
 
 // askForSudo asks for the administrator password up front when a tool will need it, so the update doesn't stop partway
-// to ask, then renews it until the returned function is called. A tool needs it when it has outdated packages to update.
+// to ask, then renews it until the returned function is called. A tool needs it when it has outdated packages to update,
+// and with a package named, when that package is one of them.
 // When it can't get the password, it returns why, and the tools that need it fail with that error.
 func (c *UpdateCmd) askForSudo(ctx context.Context, toolsToUpdate []*tools.Tool) (stopRenewing func(), err error) {
 	var needing []string
@@ -126,14 +128,17 @@ func (c *UpdateCmd) askForSudo(ctx context.Context, toolsToUpdate []*tools.Tool)
 		if !tool.NeedsSudo {
 			continue
 		}
-		if c.packageName == "" {
-			packages, err := tool.ListOutdated(ctx)
-			if err != nil {
-				return func() {}, fmt.Errorf("checking %v: %w", tool.Name, tools.WithStderr(err))
-			}
-			if len(packages) == 0 {
-				continue
-			}
+		packages, err := tool.ListOutdated(ctx)
+		if err != nil {
+			return func() {}, fmt.Errorf("checking %v: %w", tool.Name, tools.WithStderr(err))
+		}
+		if c.packageName != "" {
+			packages = slices.DeleteFunc(packages, func(outdatedPackage tools.Package) bool {
+				return outdatedPackage.Name != c.packageName
+			})
+		}
+		if len(packages) == 0 {
+			continue
 		}
 		needing = append(needing, tool.Name)
 	}
