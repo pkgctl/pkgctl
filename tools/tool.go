@@ -12,7 +12,7 @@ import (
 )
 
 // The tools that install runtimes come first, so the package managers after them update the runtimes' new installs.
-var toolList = []Tool{
+var toolList = []*Tool{
 	Brew,
 	Asdf,
 	Mise,
@@ -29,35 +29,14 @@ var toolList = []Tool{
 	Uv,
 }
 
-type Tool interface {
-	Name() string
-	// Command returns the tool's command, such as "brew", which names the tool for `pkgctl update`.
-	Command() string
-	Exists() bool
-	// NeedsSudo reports whether updating the tool's packages asks for the administrator password through sudo.
-	NeedsSudo() bool
-	// Update returns the commands that update packageName, as Outdated names it, or every package when it is empty,
-	// to run in order. It returns none if there is nothing to update.
-	Update(ctx context.Context, packageName string) ([]*exec.Cmd, error)
-	// UpdateCommand returns the command to give the user for updating the tool's packages, such as "rustup update".
-	UpdateCommand() string
-	// ReportsOutdated reports whether Outdated can list the tool's outdated packages.
-	ReportsOutdated() bool
-	// Outdated returns the installed packages that have a newer version available.
-	// Call it only when ReportsOutdated is true.
-	Outdated(ctx context.Context) ([]Package, error)
-	Version() string
-	Description() string
-}
-
-func List() []Tool {
+func List() []*Tool {
 	return toolList
 }
 
 // Find returns the tool whose command is command, such as "brew".
-func Find(command string) (Tool, error) {
+func Find(command string) (*Tool, error) {
 	for _, tool := range toolList {
-		if tool.Command() == command {
+		if tool.Command == command {
 			return tool, nil
 		}
 	}
@@ -75,19 +54,20 @@ type Package struct {
 	Latest      string
 }
 
-type BasicTool struct {
-	// ToolName is the human readable name of the tool
+// A Tool is a package manager that pkgctl checks and updates.
+type Tool struct {
+	// Name is the human readable name of the tool
 	// eg. "Homebrew"
-	ToolName string
-	// ToolCmd is the command to run the tool
+	Name string
+	// Command is the command to run the tool, which names the tool for `pkgctl check` and `pkgctl update`
 	// eg. "brew"
-	ToolCmd string
-	// Shell is the shell that defines ToolCmd, for a tool that is a shell function rather than an executable
-	// eg. "fish"; empty runs ToolCmd through $SHELL
+	Command string
+	// Shell is the shell that defines Command, for a tool that is a shell function rather than an executable
+	// eg. "fish"; empty runs Command through $SHELL
 	Shell string
-	// ToolDescription is a short description of the tool
+	// Description is a short description of the tool
 	// eg. "The missing package manager for macOS (or Linux)"
-	ToolDescription string
+	Description string
 	// UpdateArgs are the arguments to pass to the tool to update, or nil to pass the outdated packages
 	// to UpdatePackageArgs instead, for a tool whose command can't update them all, or fails with none installed
 	// eg. []string{"upgrade"}
@@ -96,7 +76,7 @@ type BasicTool struct {
 	// eg. []string{"upgrade"}
 	UpdatePackageArgs []string
 	// UpdateCommands lists the commands that update a package, or every package when packageName is empty,
-	// for a tool without one command that updates them all, in place of [BasicTool.UpdateArgs] and [BasicTool.UpdatePackageArgs]
+	// for a tool without one command that updates them all, in place of [Tool.UpdateArgs] and [Tool.UpdatePackageArgs]
 	UpdateCommands func(ctx context.Context, packageName string) ([]*exec.Cmd, error)
 	// UpdateHint is the command to give the user for a tool with UpdateCommands
 	// eg. "go install <package>@latest"
@@ -107,87 +87,66 @@ type BasicTool struct {
 	// ListOutdated lists the installed packages that have a newer version available,
 	// or is nil if the tool can't report them
 	ListOutdated func(ctx context.Context) ([]Package, error)
-	// UpdateNeedsSudo is whether updating the tool's packages asks for the administrator password through sudo
-	UpdateNeedsSudo bool
+	// NeedsSudo is whether updating the tool's packages asks for the administrator password through sudo
+	NeedsSudo bool
 }
 
-func (b *BasicTool) Name() string {
-	return b.ToolName
-}
-
-func (b *BasicTool) Command() string {
-	return b.ToolCmd
-}
-
-func (b *BasicTool) Description() string {
-	return b.ToolDescription
-}
-
-func (b *BasicTool) Exists() bool {
-	if _, err := exec.LookPath(b.ToolCmd); err == nil {
+func (t *Tool) Exists() bool {
+	if _, err := exec.LookPath(t.Command); err == nil {
 		return true
 	}
 
-	cmd := b.command(context.Background(), b.VersionArgs...)
+	cmd := t.command(context.Background(), t.VersionArgs...)
 	err := cmd.Run()
 	return err == nil && cmd.ProcessState.ExitCode() == 0
 }
 
-func (b *BasicTool) Update(ctx context.Context, packageName string) ([]*exec.Cmd, error) {
-	if b.UpdateCommands != nil {
-		return b.UpdateCommands(ctx, packageName)
+// Update returns the commands that update packageName, as ListOutdated names it, or every package when it is empty,
+// to run in order. It returns none if there is nothing to update.
+func (t *Tool) Update(ctx context.Context, packageName string) ([]*exec.Cmd, error) {
+	if t.UpdateCommands != nil {
+		return t.UpdateCommands(ctx, packageName)
 	}
 	if packageName != "" {
-		return []*exec.Cmd{b.command(ctx, append(slices.Clone(b.UpdatePackageArgs), packageName)...)}, nil
+		return []*exec.Cmd{t.command(ctx, append(slices.Clone(t.UpdatePackageArgs), packageName)...)}, nil
 	}
-	if b.UpdateArgs != nil {
-		return []*exec.Cmd{b.command(ctx, b.UpdateArgs...)}, nil
+	if t.UpdateArgs != nil {
+		return []*exec.Cmd{t.command(ctx, t.UpdateArgs...)}, nil
 	}
 
-	packages, err := b.Outdated(ctx)
+	packages, err := t.ListOutdated(ctx)
 	if err != nil || len(packages) == 0 {
 		return nil, err
 	}
-	args := slices.Clone(b.UpdatePackageArgs)
+	args := slices.Clone(t.UpdatePackageArgs)
 	for _, outdatedPackage := range packages {
 		args = append(args, outdatedPackage.Name)
 	}
-	return []*exec.Cmd{b.command(ctx, args...)}, nil
+	return []*exec.Cmd{t.command(ctx, args...)}, nil
 }
 
-func (b *BasicTool) UpdateCommand() string {
-	if b.UpdateHint != "" {
-		return b.UpdateHint
+// UpdateCommand returns the command to give the user for updating the tool's packages, such as "rustup update".
+func (t *Tool) UpdateCommand() string {
+	if t.UpdateHint != "" {
+		return t.UpdateHint
 	}
-	if b.UpdateArgs == nil {
-		return strings.Join(append([]string{b.ToolCmd}, b.UpdatePackageArgs...), " ") + " <packages>"
+	if t.UpdateArgs == nil {
+		return strings.Join(append([]string{t.Command}, t.UpdatePackageArgs...), " ") + " <packages>"
 	}
-	return strings.Join(append([]string{b.ToolCmd}, b.UpdateArgs...), " ")
+	return strings.Join(append([]string{t.Command}, t.UpdateArgs...), " ")
 }
 
-func (b *BasicTool) ReportsOutdated() bool {
-	return b.ListOutdated != nil
-}
-
-func (b *BasicTool) NeedsSudo() bool {
-	return b.UpdateNeedsSudo
-}
-
-func (b *BasicTool) Outdated(ctx context.Context) ([]Package, error) {
-	return b.ListOutdated(ctx)
-}
-
-func (b *BasicTool) Version() string {
-	cmd := b.command(context.Background(), b.VersionArgs...)
+func (t *Tool) Version() string {
+	cmd := t.command(context.Background(), t.VersionArgs...)
 	out, _ := cmd.Output()
 	return string(out)
 }
 
-func (b *BasicTool) command(ctx context.Context, arg ...string) *exec.Cmd {
-	if b.Shell == "" {
-		return ExecContext(ctx, b.ToolCmd, arg...)
+func (t *Tool) command(ctx context.Context, arg ...string) *exec.Cmd {
+	if t.Shell == "" {
+		return ExecContext(ctx, t.Command, arg...)
 	}
-	return exec.CommandContext(ctx, b.Shell, "-c", strings.Join(append([]string{b.ToolCmd}, arg...), " "))
+	return exec.CommandContext(ctx, t.Shell, "-c", strings.Join(append([]string{t.Command}, arg...), " "))
 }
 
 func ExecContext(ctx context.Context, name string, arg ...string) *exec.Cmd {

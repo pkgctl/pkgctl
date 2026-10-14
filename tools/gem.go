@@ -6,10 +6,10 @@ import (
 	"slices"
 )
 
-var Gem = &BasicTool{
-	ToolName:          "RubyGems",
-	ToolCmd:           "gem",
-	ToolDescription:   "The Ruby package manager",
+var Gem = &Tool{
+	Name:              "RubyGems",
+	Command:           "gem",
+	Description:       "The Ruby package manager",
 	VersionArgs:       []string{"--version"},
 	UpdatePackageArgs: []string{"update"},
 	ListOutdated:      listGemOutdated,

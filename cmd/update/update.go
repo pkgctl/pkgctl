@@ -17,7 +17,7 @@ import (
 type UpdateCmd struct {
 	fs *flag.FlagSet
 	// tool is the one tool to update, or nil to update every tool.
-	tool        tools.Tool
+	tool        *tools.Tool
 	packageName string
 }
 
@@ -63,9 +63,9 @@ func (c *UpdateCmd) Run(ctx context.Context) error {
 	toolsToUpdate := tools.List()
 	if c.tool != nil {
 		if !c.tool.Exists() {
-			return fmt.Errorf("%v isn't installed", c.tool.Name())
+			return fmt.Errorf("%v isn't installed", c.tool.Name)
 		}
-		toolsToUpdate = []tools.Tool{c.tool}
+		toolsToUpdate = []*tools.Tool{c.tool}
 	}
 
 	stopRenewing, sudoErr := c.askForSudo(ctx, toolsToUpdate)
@@ -85,9 +85,9 @@ func (c *UpdateCmd) Run(ctx context.Context) error {
 			fmt.Println()
 		}
 		if runUpdate(ctx, tool, c.packageName, sudoErr) == nil {
-			updated = append(updated, tool.Name())
+			updated = append(updated, tool.Name)
 		} else {
-			failed = append(failed, tool.Name())
+			failed = append(failed, tool.Name)
 		}
 		ran++
 	}
@@ -119,22 +119,22 @@ const sudoRenewal = time.Minute
 // askForSudo asks for the administrator password up front when a tool will need it, so the update doesn't stop partway
 // to ask, then renews it until the returned function is called. A tool needs it when it has outdated packages to update.
 // When it can't get the password, it returns why, and the tools that need it fail with that error.
-func (c *UpdateCmd) askForSudo(ctx context.Context, toolsToUpdate []tools.Tool) (stopRenewing func(), err error) {
+func (c *UpdateCmd) askForSudo(ctx context.Context, toolsToUpdate []*tools.Tool) (stopRenewing func(), err error) {
 	var needing []string
 	for _, tool := range toolsToUpdate {
-		if !tool.NeedsSudo() || !tool.Exists() {
+		if !tool.NeedsSudo || !tool.Exists() {
 			continue
 		}
 		if c.packageName == "" {
-			packages, err := tool.Outdated(ctx)
+			packages, err := tool.ListOutdated(ctx)
 			if err != nil {
-				return func() {}, fmt.Errorf("checking %v: %w", tool.Name(), tools.WithStderr(err))
+				return func() {}, fmt.Errorf("checking %v: %w", tool.Name, tools.WithStderr(err))
 			}
 			if len(packages) == 0 {
 				continue
 			}
 		}
-		needing = append(needing, tool.Name())
+		needing = append(needing, tool.Name)
 	}
 	if len(needing) == 0 {
 		return func() {}, nil
@@ -167,9 +167,9 @@ func (c *UpdateCmd) askForSudo(ctx context.Context, toolsToUpdate []tools.Tool) 
 
 // runUpdate updates packageName, or all of tool's packages when it is empty, in the terminal,
 // between a header naming tool and a status line, and returns the error.
-func runUpdate(ctx context.Context, tool tools.Tool, packageName string, sudoErr error) error {
+func runUpdate(ctx context.Context, tool *tools.Tool, packageName string, sudoErr error) error {
 	// Symbols: ✓ ✗ ⟳ ↻
-	fmt.Println(colors.Stdout.Header(tool.Name()))
+	fmt.Println(colors.Stdout.Header(tool.Name))
 
 	start := time.Now()
 	err := update(ctx, tool, packageName, sudoErr)
@@ -185,8 +185,8 @@ func runUpdate(ctx context.Context, tool tools.Tool, packageName string, sudoErr
 
 // update runs the commands that update packageName, or all of tool's packages, in order, stopping at the first failure.
 // A tool that needs the administrator password fails with sudoErr when pkgctl couldn't get it.
-func update(ctx context.Context, tool tools.Tool, packageName string, sudoErr error) error {
-	if tool.NeedsSudo() && sudoErr != nil {
+func update(ctx context.Context, tool *tools.Tool, packageName string, sudoErr error) error {
+	if tool.NeedsSudo && sudoErr != nil {
 		return sudoErr
 	}
 	cmds, err := tool.Update(ctx, packageName)

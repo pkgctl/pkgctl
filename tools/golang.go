@@ -13,14 +13,14 @@ import (
 	"strings"
 )
 
-var GoBinaries = &BasicTool{
-	ToolName:        "Go",
-	ToolCmd:         "go",
-	ToolDescription: "Commands installed with `go install`",
-	VersionArgs:     []string{"version"},
-	ListOutdated:    listGoOutdated,
-	UpdateCommands:  goUpdateCommands,
-	UpdateHint:      "go install <package>@latest",
+var GoBinaries = &Tool{
+	Name:           "Go",
+	Command:        "go",
+	Description:    "Commands installed with `go install`",
+	VersionArgs:    []string{"version"},
+	ListOutdated:   listGoOutdated,
+	UpdateCommands: goUpdateCommands,
+	UpdateHint:     "go install <package>@latest",
 }
 
 // A goBinary is a command `go install` put in its directory.

@@ -6,13 +6,13 @@ import (
 	"sort"
 )
 
-var Mise = &BasicTool{
-	ToolName:          "mise",
-	ToolCmd:           "mise",
+var Mise = &Tool{
+	Name:              "mise",
+	Command:           "mise",
 	UpdateArgs:        []string{"upgrade", "--global"},
 	UpdatePackageArgs: []string{"upgrade", "--global"},
 	VersionArgs:       []string{"version"},
-	ToolDescription:   "The front-end to your dev env",
+	Description:       "The front-end to your dev env",
 	ListOutdated:      listMiseOutdated,
 }
 

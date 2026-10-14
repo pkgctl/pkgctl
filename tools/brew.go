@@ -7,10 +7,10 @@ import (
 	"strings"
 )
 
-var Brew = &BasicTool{
-	ToolName:          "Homebrew",
-	ToolCmd:           "brew",
-	ToolDescription:   "The missing package manager for macOS (or Linux)",
+var Brew = &Tool{
+	Name:              "Homebrew",
+	Command:           "brew",
+	Description:       "The missing package manager for macOS (or Linux)",
 	UpdateArgs:        []string{"upgrade", "--yes"},
 	UpdatePackageArgs: []string{"upgrade", "--yes"},
 	VersionArgs:       []string{"--version"},

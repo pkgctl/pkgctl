@@ -8,8 +8,8 @@ import (
 
 func TestUpdateNamesOutdatedPackages(t *testing.T) {
 	t.Setenv("SHELL", "")
-	tool := &BasicTool{
-		ToolCmd:           "pnpm",
+	tool := &Tool{
+		Command:           "pnpm",
 		UpdatePackageArgs: []string{"update", "--global"},
 		ListOutdated: func(ctx context.Context) ([]Package, error) {
 			return []Package{{Name: "cowsay"}, {Name: "typescript"}}, nil
@@ -31,8 +31,8 @@ func TestUpdateNamesOutdatedPackages(t *testing.T) {
 }
 
 func TestUpdateWithNothingOutdated(t *testing.T) {
-	tool := &BasicTool{
-		ToolCmd:           "pnpm",
+	tool := &Tool{
+		Command:           "pnpm",
 		UpdatePackageArgs: []string{"update", "--global"},
 		ListOutdated: func(ctx context.Context) ([]Package, error) {
 			return nil, nil

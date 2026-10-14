@@ -6,15 +6,15 @@ import (
 	"strings"
 )
 
-var Mas = &BasicTool{
-	ToolName:          "mas",
-	ToolCmd:           "mas",
-	ToolDescription:   "Mac App Store command-line interface",
+var Mas = &Tool{
+	Name:              "mas",
+	Command:           "mas",
+	Description:       "Mac App Store command-line interface",
 	UpdateArgs:        []string{"update"},
 	UpdatePackageArgs: []string{"update"},
 	VersionArgs:       []string{"version"},
 	ListOutdated:      listMasOutdated,
-	UpdateNeedsSudo:   true,
+	NeedsSudo:         true,
 }
 
 func listMasOutdated(ctx context.Context) ([]Package, error) {

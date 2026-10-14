@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 )
 
-var Pip = &BasicTool{
-	ToolName:          "pip",
-	ToolCmd:           "pip",
-	ToolDescription:   "The package installer for Python",
+var Pip = &Tool{
+	Name:              "pip",
+	Command:           "pip",
+	Description:       "The package installer for Python",
 	VersionArgs:       []string{"--version"},
 	UpdatePackageArgs: []string{"install", "--upgrade"},
 	ListOutdated:      listPipOutdated,

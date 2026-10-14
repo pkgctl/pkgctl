@@ -92,11 +92,11 @@ func (c *StatusCmd) Run(ctx context.Context) error {
 // printDetails lists each tool's outdated packages the way `pkgctl check` does, then the summary.
 func printDetails(report outdated.Report) {
 	for _, tool := range tools.List() {
-		packages := report.Packages[tool.Name()]
+		packages := report.Packages[tool.Name]
 		if len(packages) == 0 {
 			continue
 		}
-		fmt.Println(colors.Stdout.Header(tool.Name()))
+		fmt.Println(colors.Stdout.Header(tool.Name))
 		fmt.Print(outdated.Describe(tool, packages))
 		fmt.Println()
 	}

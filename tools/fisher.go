@@ -15,11 +15,11 @@ import (
 	"strings"
 )
 
-var Fisher = &BasicTool{
-	ToolName:          "Fisher",
-	ToolCmd:           "fisher",
+var Fisher = &Tool{
+	Name:              "Fisher",
+	Command:           "fisher",
 	Shell:             "fish",
-	ToolDescription:   "A plugin manager for Fish",
+	Description:       "A plugin manager for Fish",
 	UpdateArgs:        []string{"update"},
 	UpdatePackageArgs: []string{"update"},
 	VersionArgs:       []string{"--version"},

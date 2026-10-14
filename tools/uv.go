@@ -5,10 +5,10 @@ import (
 	"regexp"
 )
 
-var Uv = &BasicTool{
-	ToolName:          "uv",
-	ToolCmd:           "uv",
-	ToolDescription:   "An extremely fast Python package and project manager",
+var Uv = &Tool{
+	Name:              "uv",
+	Command:           "uv",
+	Description:       "An extremely fast Python package and project manager",
 	UpdateArgs:        []string{"tool", "upgrade", "--all"},
 	UpdatePackageArgs: []string{"tool", "upgrade"},
 	VersionArgs:       []string{"--version"},

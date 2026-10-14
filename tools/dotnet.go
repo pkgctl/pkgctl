@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 )
 
-var DotnetTools = &BasicTool{
-	ToolName:          ".NET tools",
-	ToolCmd:           "dotnet",
-	ToolDescription:   "Global tools for the .NET SDK",
+var DotnetTools = &Tool{
+	Name:              ".NET tools",
+	Command:           "dotnet",
+	Description:       "Global tools for the .NET SDK",
 	UpdateArgs:        []string{"tool", "update", "--all", "--global"},
 	UpdatePackageArgs: []string{"tool", "update", "--global"},
 	VersionArgs:       []string{"--version"},

@@ -2,10 +2,10 @@ package tools
 
 import "context"
 
-var Pnpm = &BasicTool{
-	ToolName:          "pnpm",
-	ToolCmd:           "pnpm",
-	ToolDescription:   "Fast, disk space efficient package manager",
+var Pnpm = &Tool{
+	Name:              "pnpm",
+	Command:           "pnpm",
+	Description:       "Fast, disk space efficient package manager",
 	UpdatePackageArgs: []string{"update", "--global"},
 	VersionArgs:       []string{"--version"},
 	ListOutdated:      listPnpmOutdated,

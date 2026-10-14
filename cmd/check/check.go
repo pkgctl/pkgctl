@@ -18,7 +18,7 @@ type CheckCmd struct {
 	fs    *flag.FlagSet
 	ifDue bool
 	// tool is the one tool to check, or nil to check every tool.
-	tool tools.Tool
+	tool *tools.Tool
 }
 
 const usage = `Usage: pkgctl check [options] [tool]
@@ -63,8 +63,8 @@ func (c *CheckCmd) Parse(args []string) error {
 	if err != nil {
 		return err
 	}
-	if !tool.ReportsOutdated() {
-		return fmt.Errorf("%v can't report outdated packages", tool.Name())
+	if tool.ListOutdated == nil {
+		return fmt.Errorf("%v can't report outdated packages", tool.Name)
 	}
 	c.tool = tool
 	return nil
@@ -101,32 +101,32 @@ func (c *CheckCmd) Run(ctx context.Context) error {
 	toolsToCheck := tools.List()
 	if c.tool != nil {
 		if !c.tool.Exists() {
-			return fmt.Errorf("%v isn't installed", c.tool.Name())
+			return fmt.Errorf("%v isn't installed", c.tool.Name)
 		}
 		// Checking one tool replaces only its part of the saved report, and keeps when every tool was last checked.
 		report, err = outdated.Load()
 		if err != nil {
 			return err
 		}
-		report.Clear(c.tool.Name(), "")
-		toolsToCheck = []tools.Tool{c.tool}
+		report.Clear(c.tool.Name, "")
+		toolsToCheck = []*tools.Tool{c.tool}
 	}
 	for _, tool := range toolsToCheck {
-		if !tool.ReportsOutdated() || !tool.Exists() {
+		if tool.ListOutdated == nil || !tool.Exists() {
 			continue
 		}
 
-		packages, err := tool.Outdated(ctx)
+		packages, err := tool.ListOutdated(ctx)
 		if err != nil {
-			return fmt.Errorf("checking %v: %w", tool.Name(), tools.WithStderr(err))
+			return fmt.Errorf("checking %v: %w", tool.Name, tools.WithStderr(err))
 		}
 
 		if len(packages) == 0 {
-			fmt.Println(colors.Stdout.Green("✓") + " " + tool.Name())
+			fmt.Println(colors.Stdout.Green("✓") + " " + tool.Name)
 			continue
 		}
-		report.Packages[tool.Name()] = packages
-		fmt.Println(colors.Stdout.Header(tool.Name()))
+		report.Packages[tool.Name] = packages
+		fmt.Println(colors.Stdout.Header(tool.Name))
 		fmt.Print(outdated.Describe(tool, packages))
 	}
 

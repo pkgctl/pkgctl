@@ -1,12 +1,12 @@
 package tools
 
-var Asdf = &BasicTool{
-	ToolName:          "asdf",
-	ToolCmd:           "asdf",
+var Asdf = &Tool{
+	Name:              "asdf",
+	Command:           "asdf",
 	UpdateArgs:        []string{"plugin", "update", "--all"},
 	UpdatePackageArgs: []string{"plugin", "update"},
 	VersionArgs:       []string{"version"},
-	ToolDescription:   "Extendable version manager with support for Ruby, Node.js, Elixir, Erlang & more",
+	Description:       "Extendable version manager with support for Ruby, Node.js, Elixir, Erlang & more",
 }
 
 // TODO Updating the plugins is more work

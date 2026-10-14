@@ -98,9 +98,9 @@ func toolsUsage() string {
 	var installed, missing []string
 	for _, tool := range tools.List() {
 		if tool.Exists() {
-			installed = append(installed, tool.Command())
+			installed = append(installed, tool.Command)
 		} else {
-			missing = append(missing, tool.Command())
+			missing = append(missing, tool.Command)
 		}
 	}
 

@@ -80,7 +80,7 @@ func listToolVersions() {
 
 	for _, tool := range tools.List() {
 		if tool.Exists() {
-			fmt.Printf("%v %v", colors.Stdout.Bold(tool.Name()+":"), tool.Version())
+			fmt.Printf("%v %v", colors.Stdout.Bold(tool.Name+":"), tool.Version())
 		}
 	}
 }

@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 )
 
-var Pipx = &BasicTool{
-	ToolName:          "pipx",
-	ToolCmd:           "pipx",
-	ToolDescription:   "Install and run Python applications in isolated environments",
+var Pipx = &Tool{
+	Name:              "pipx",
+	Command:           "pipx",
+	Description:       "Install and run Python applications in isolated environments",
 	UpdateArgs:        []string{"upgrade-all"},
 	UpdatePackageArgs: []string{"upgrade"},
 	VersionArgs:       []string{"--version"},

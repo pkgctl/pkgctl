@@ -36,6 +36,6 @@ func (c *ListCommand) Run(ctx context.Context) error {
 
 func list() {
 	for _, tool := range tools.List() {
-		fmt.Printf("%-8s %s — %s\n", tool.Command(), tool.Name(), tool.Description())
+		fmt.Printf("%-8s %s — %s\n", tool.Command, tool.Name, tool.Description)
 	}
 }

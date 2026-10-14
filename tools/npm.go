@@ -6,10 +6,10 @@ import (
 	"sort"
 )
 
-var Npm = &BasicTool{
-	ToolName:          "npm",
-	ToolCmd:           "npm",
-	ToolDescription:   "The package manager for JavaScript",
+var Npm = &Tool{
+	Name:              "npm",
+	Command:           "npm",
+	Description:       "The package manager for JavaScript",
 	UpdateArgs:        []string{"update", "--global"},
 	UpdatePackageArgs: []string{"update", "--global"},
 	VersionArgs:       []string{"--version"},

@@ -5,10 +5,10 @@ import (
 	"regexp"
 )
 
-var RustUp = &BasicTool{
-	ToolName:          "rustup",
-	ToolCmd:           "rustup",
-	ToolDescription:   "The Rust toolchain installer",
+var RustUp = &Tool{
+	Name:              "rustup",
+	Command:           "rustup",
+	Description:       "The Rust toolchain installer",
 	UpdateArgs:        []string{"update"},
 	UpdatePackageArgs: []string{"update"},
 	VersionArgs:       []string{"--version"},

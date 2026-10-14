@@ -40,12 +40,12 @@ func (r Report) Summary() string {
 	total := 0
 	var counts []string
 	for _, tool := range tools.List() {
-		packages := r.Packages[tool.Name()]
+		packages := r.Packages[tool.Name]
 		if len(packages) == 0 {
 			continue
 		}
 		total += len(packages)
-		counts = append(counts, fmt.Sprintf("%v %v", tool.Name(), len(packages)))
+		counts = append(counts, fmt.Sprintf("%v %v", tool.Name, len(packages)))
 	}
 
 	if total == 0 {
@@ -60,7 +60,7 @@ func (r Report) Summary() string {
 }
 
 // Describe lists tool's outdated packages, one per line, then the command that updates them.
-func Describe(tool tools.Tool, packages []tools.Package) string {
+func Describe(tool *tools.Tool, packages []tools.Package) string {
 	var description strings.Builder
 	for _, outdatedPackage := range packages {
 		if outdatedPackage.DisplayName != "" {
