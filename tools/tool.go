@@ -102,7 +102,7 @@ func (t *Tool) Exists() bool {
 }
 
 // Update returns the commands that update packageName, as ListOutdated names it, or every package when it is empty,
-// to run in order. It returns none if there is nothing to update.
+// to run in order.
 func (t *Tool) Update(ctx context.Context, packageName string) ([]*exec.Cmd, error) {
 	if t.UpdateCommands != nil {
 		return t.UpdateCommands(ctx, packageName)

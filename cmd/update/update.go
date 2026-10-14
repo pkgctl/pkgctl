@@ -174,7 +174,6 @@ func (c *UpdateCmd) askForSudo(ctx context.Context, toolsToUpdate []*tools.Tool)
 // runUpdate updates packageName, or all of tool's packages when it is empty, in the terminal,
 // between a header naming tool and a status line, and returns the error.
 func runUpdate(ctx context.Context, tool *tools.Tool, packageName string, sudoErr error) error {
-	// Symbols: ✓ ✗ ⟳ ↻
 	fmt.Println(colors.Stdout.Header(tool.Name))
 
 	start := time.Now()
