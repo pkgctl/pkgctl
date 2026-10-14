@@ -7,11 +7,13 @@ import (
 	"os"
 	"os/signal"
 	"runtime/debug"
+	"strings"
 	"syscall"
 
 	"github.com/pkgctl/pkgctl/cmd"
 	"github.com/pkgctl/pkgctl/cmd/version"
 	"github.com/pkgctl/pkgctl/ioutil/colors"
+	"github.com/pkgctl/pkgctl/tools"
 )
 
 const usage = `Usage: pkgctl <command> [options]
@@ -46,7 +48,7 @@ func main() {
 	}()
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "%s\n", usage)
+		fmt.Fprintf(os.Stderr, "%s\n%s\n", usage, toolsUsage())
 	}
 
 	var versionFlag bool
@@ -89,4 +91,22 @@ func main() {
 		fmt.Fprintln(os.Stderr, colors.Stderr.Red("pkgctl: "+err.Error()))
 		os.Exit(1)
 	}
+}
+
+// toolsUsage lists the installed tools by the command that check and update take, then the supported ones that aren't installed.
+func toolsUsage() string {
+	var installed, missing []string
+	for _, tool := range tools.List() {
+		if tool.Exists() {
+			installed = append(installed, tool.Command())
+		} else {
+			missing = append(missing, tool.Command())
+		}
+	}
+
+	text := "Tools:\n  " + strings.Join(installed, ", ") + "\n"
+	if len(missing) > 0 {
+		text += "\nNot installed:\n  " + strings.Join(missing, ", ") + "\n"
+	}
+	return text
 }
