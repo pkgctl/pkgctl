@@ -37,7 +37,8 @@ func listDotnetOutdated(ctx context.Context) ([]Package, error) {
 		if err != nil {
 			return nil, err
 		}
-		if latest != tool.Current {
+		// The search finds no versions for a tool from a source it can't see, such as a local folder.
+		if latest != "" && latest != tool.Current {
 			packages = append(packages, Package{Name: tool.Name, Current: tool.Current, Latest: latest})
 		}
 	}
