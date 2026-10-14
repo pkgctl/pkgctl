@@ -20,7 +20,13 @@ func NewListCommand() *ListCommand {
 }
 
 func (c *ListCommand) Parse(args []string) error {
-	return c.fs.Parse(args)
+	if err := c.fs.Parse(args); err != nil {
+		return err
+	}
+	if c.fs.NArg() > 0 {
+		return fmt.Errorf("unexpected argument %q", c.fs.Arg(0))
+	}
+	return nil
 }
 
 func (c *ListCommand) Run(ctx context.Context) error {

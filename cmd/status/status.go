@@ -46,7 +46,13 @@ func NewStatusCmd() *StatusCmd {
 }
 
 func (c *StatusCmd) Parse(args []string) error {
-	return c.fs.Parse(args)
+	if err := c.fs.Parse(args); err != nil {
+		return err
+	}
+	if c.fs.NArg() > 0 {
+		return fmt.Errorf("unexpected argument %q", c.fs.Arg(0))
+	}
+	return nil
 }
 
 // Run lists the outdated packages the last check found, or with --short only counts them in one line,

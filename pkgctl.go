@@ -49,11 +49,6 @@ func main() {
 		fmt.Fprintf(os.Stderr, "%s\n", usage)
 	}
 
-	if len(os.Args) == 1 {
-		flag.Usage()
-		os.Exit(0)
-	}
-
 	var versionFlag bool
 
 	flag.BoolVar(&versionFlag, "version", false, "print the version")
@@ -64,19 +59,28 @@ func main() {
 		os.Exit(0)
 	}
 
+	if flag.NArg() == 0 {
+		flag.Usage()
+		os.Exit(0)
+	}
+
 	// Parse the subcommand
 	args := flag.Args()
 	command := cmd.CommandList[args[0]]
 
 	if command == nil {
+		fmt.Fprintln(os.Stderr, colors.Stderr.Red(fmt.Sprintf("pkgctl: unknown command %q", args[0])))
 		flag.Usage()
-		os.Exit(0)
+		os.Exit(2)
 	}
 
-	err := command.Parse(args[1:])
-	if err == nil {
-		err = command.Run(ctx)
+	// Bad arguments exit 2, like a bad flag does.
+	if err := command.Parse(args[1:]); err != nil {
+		fmt.Fprintln(os.Stderr, colors.Stderr.Red("pkgctl: "+err.Error()))
+		os.Exit(2)
 	}
+
+	err := command.Run(ctx)
 	if ctx.Err() != nil {
 		// Interrupted: stop quietly, with the shell's usual status for Ctrl-C.
 		os.Exit(130)

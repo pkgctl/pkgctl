@@ -60,6 +60,9 @@ func (c *UpdateCmd) Parse(args []string) error {
 func (c *UpdateCmd) Run(ctx context.Context) error {
 	toolsToUpdate := tools.List()
 	if c.tool != nil {
+		if !c.tool.Exists() {
+			return fmt.Errorf("%v isn't installed", c.tool.Name())
+		}
 		toolsToUpdate = []tools.Tool{c.tool}
 	}
 

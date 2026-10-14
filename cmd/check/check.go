@@ -55,10 +55,16 @@ func (c *CheckCmd) Parse(args []string) error {
 	if c.fs.NArg() == 0 {
 		return nil
 	}
+	if c.ifDue {
+		return errors.New("--if-due checks every tool, so it can't take a tool")
+	}
 
 	tool, err := tools.Find(c.fs.Arg(0))
 	if err != nil {
 		return err
+	}
+	if !tool.ReportsOutdated() {
+		return fmt.Errorf("%v can't report outdated packages", tool.Name())
 	}
 	c.tool = tool
 	return nil
@@ -94,6 +100,9 @@ func (c *CheckCmd) Run(ctx context.Context) error {
 	}
 	toolsToCheck := tools.List()
 	if c.tool != nil {
+		if !c.tool.Exists() {
+			return fmt.Errorf("%v isn't installed", c.tool.Name())
+		}
 		// Checking one tool replaces only its part of the saved report, and keeps when every tool was last checked.
 		report, err = outdated.Load()
 		if err != nil {

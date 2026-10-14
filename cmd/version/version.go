@@ -57,7 +57,13 @@ func NewVersionCommand() *VersionCommand {
 }
 
 func (c *VersionCommand) Parse(args []string) error {
-	return c.fs.Parse(args)
+	if err := c.fs.Parse(args); err != nil {
+		return err
+	}
+	if c.fs.NArg() > 0 {
+		return fmt.Errorf("unexpected argument %q", c.fs.Arg(0))
+	}
+	return nil
 }
 
 func (c *VersionCommand) Run(ctx context.Context) error {
