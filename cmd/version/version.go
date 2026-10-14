@@ -25,7 +25,7 @@ func String() string {
 	for _, setting := range info.Settings {
 		switch setting.Key {
 		case "vcs.revision":
-			revision = setting.Value[:7]
+			revision = setting.Value[:min(7, len(setting.Value))]
 		case "vcs.modified":
 			modified = setting.Value
 		}
