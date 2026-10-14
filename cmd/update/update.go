@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/pkgctl/pkgctl/ioutil/colors"
@@ -66,7 +67,7 @@ func (c *UpdateCmd) Run(ctx context.Context) error {
 		toolsToUpdate = []tools.Tool{c.tool}
 	}
 
-	var updated []string
+	var updated, failed []string
 	ran := 0
 	for _, tool := range toolsToUpdate {
 		if ctx.Err() != nil {
@@ -81,6 +82,8 @@ func (c *UpdateCmd) Run(ctx context.Context) error {
 		}
 		if runUpdate(ctx, tool, c.packageName) == nil {
 			updated = append(updated, tool.Name())
+		} else {
+			failed = append(failed, tool.Name())
 		}
 		ran++
 	}
@@ -97,7 +100,13 @@ func (c *UpdateCmd) Run(ctx context.Context) error {
 	if err := outdated.Save(report); err != nil {
 		return err
 	}
-	return ctx.Err()
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	if len(failed) > 0 {
+		return fmt.Errorf("updating %v failed", strings.Join(failed, ", "))
+	}
+	return nil
 }
 
 // runUpdate updates packageName, or all of tool's packages when it is empty, in the terminal,
