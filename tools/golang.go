@@ -71,7 +71,7 @@ func outdatedGoBinaries(ctx context.Context) ([]goBinary, error) {
 		return nil, err
 	}
 
-	args := []string{"list", "-m", "-json"}
+	args := []string{"list", "-m", "-e", "-json"}
 	for _, binary := range binaries {
 		args = append(args, binary.Module+"@latest")
 	}
@@ -86,8 +86,9 @@ func outdatedGoBinaries(ctx context.Context) ([]goBinary, error) {
 
 	var outdated []goBinary
 	for _, binary := range binaries {
-		if latest[binary.Module] != binary.Version {
-			binary.Latest = latest[binary.Module]
+		version, found := latest[binary.Module]
+		if found && version != binary.Version {
+			binary.Latest = version
 			outdated = append(outdated, binary)
 		}
 	}
@@ -138,7 +139,8 @@ func goBinaries(ctx context.Context) ([]goBinary, error) {
 	return binaries, nil
 }
 
-// parseGoModules parses `go list -m -json`, a stream of JSON objects, into each module's version, keyed by path.
+// parseGoModules parses `go list -m -e -json`, a stream of JSON objects, into each module's version, keyed by path.
+// It leaves out a module go couldn't resolve, such as a private one, which has an error in place of a version.
 func parseGoModules(output string) (map[string]string, error) {
 	versions := map[string]string{}
 	decoder := json.NewDecoder(strings.NewReader(output))
@@ -146,11 +148,14 @@ func parseGoModules(output string) (map[string]string, error) {
 		var module struct {
 			Path    string
 			Version string
+			Error   *struct{}
 		}
 		if err := decoder.Decode(&module); err != nil {
 			return nil, err
 		}
-		versions[module.Path] = module.Version
+		if module.Error == nil {
+			versions[module.Path] = module.Version
+		}
 	}
 	return versions, nil
 }

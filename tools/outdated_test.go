@@ -248,6 +248,13 @@ func TestParseNugetLatest(t *testing.T) {
 
 func TestParseGoModules(t *testing.T) {
 	output := `{
+	"Path": "git.example.com/private/tool",
+	"Version": "latest",
+	"Error": {
+		"Err": "git.example.com/private/tool@latest: unrecognized import path"
+	}
+}
+{
 	"Path": "github.com/go-delve/delve",
 	"Version": "v1.27.2",
 	"Time": "2026-09-30T14:02:11Z"
