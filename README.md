@@ -91,3 +91,5 @@ Settings live in `~/.config/pkgctl/config.json`. The file is optional, and each 
 ```
 
 - `check_interval`: how often to check for outdated packages in the background, as a duration such as `30m` or `6h`. Defaults to `24h`.
+
+pkgctl colors its output only on a terminal. Set `NO_COLOR` to any value to turn color off there too.
