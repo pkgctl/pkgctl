@@ -7,12 +7,13 @@ import (
 )
 
 var Mise = &BasicTool{
-	ToolName:        "mise",
-	ToolCmd:         "mise",
-	UpdateArgs:      []string{"upgrade", "--global"},
-	VersionArgs:     []string{"version"},
-	ToolDescription: "The front-end to your dev env",
-	ListOutdated:    listMiseOutdated,
+	ToolName:          "mise",
+	ToolCmd:           "mise",
+	UpdateArgs:        []string{"upgrade", "--global"},
+	UpdatePackageArgs: []string{"upgrade", "--global"},
+	VersionArgs:       []string{"version"},
+	ToolDescription:   "The front-end to your dev env",
+	ListOutdated:      listMiseOutdated,
 }
 
 func listMiseOutdated(ctx context.Context) ([]Package, error) {

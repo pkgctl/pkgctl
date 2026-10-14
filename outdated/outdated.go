@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"syscall"
 	"time"
@@ -21,6 +22,17 @@ type Report struct {
 	CheckedAt time.Time
 	// Packages maps each tool's name to its installed packages that have a newer version available.
 	Packages map[string][]tools.Package
+}
+
+// Clear removes toolName's packages from the report, or only packageName when it isn't empty.
+func (r Report) Clear(toolName, packageName string) {
+	if packageName == "" {
+		delete(r.Packages, toolName)
+		return
+	}
+	r.Packages[toolName] = slices.DeleteFunc(r.Packages[toolName], func(outdatedPackage tools.Package) bool {
+		return outdatedPackage.Name == packageName
+	})
 }
 
 // Summary counts the report's outdated packages in one line, or returns "" if there are none.
@@ -74,7 +86,7 @@ func Load() (Report, error) {
 
 	data, err := os.ReadFile(path)
 	if errors.Is(err, fs.ErrNotExist) {
-		return Report{}, nil
+		return Report{Packages: map[string][]tools.Package{}}, nil
 	}
 	if err != nil {
 		return Report{}, err

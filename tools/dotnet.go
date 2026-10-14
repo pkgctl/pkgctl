@@ -6,12 +6,13 @@ import (
 )
 
 var DotnetTools = &BasicTool{
-	ToolName:        ".NET tools",
-	ToolCmd:         "dotnet",
-	ToolDescription: "Global tools for the .NET SDK",
-	UpdateArgs:      []string{"tool", "update", "--all", "--global"},
-	VersionArgs:     []string{"--version"},
-	ListOutdated:    listDotnetOutdated,
+	ToolName:          ".NET tools",
+	ToolCmd:           "dotnet",
+	ToolDescription:   "Global tools for the .NET SDK",
+	UpdateArgs:        []string{"tool", "update", "--all", "--global"},
+	UpdatePackageArgs: []string{"tool", "update", "--global"},
+	VersionArgs:       []string{"--version"},
+	ListOutdated:      listDotnetOutdated,
 }
 
 // listDotnetOutdated asks the NuGet sources for each global tool's latest version,

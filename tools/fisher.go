@@ -16,13 +16,14 @@ import (
 )
 
 var Fisher = &BasicTool{
-	ToolName:        "Fisher",
-	ToolCmd:         "fisher",
-	Shell:           "fish",
-	ToolDescription: "A plugin manager for Fish",
-	UpdateArgs:      []string{"update"},
-	VersionArgs:     []string{"--version"},
-	ListOutdated:    listFisherOutdated,
+	ToolName:          "Fisher",
+	ToolCmd:           "fisher",
+	Shell:             "fish",
+	ToolDescription:   "A plugin manager for Fish",
+	UpdateArgs:        []string{"update"},
+	UpdatePackageArgs: []string{"update"},
+	VersionArgs:       []string{"--version"},
+	ListOutdated:      listFisherOutdated,
 }
 
 // fisherPluginsScript prints one line per installed plugin: its name and the files fisher installed for it, tab separated.

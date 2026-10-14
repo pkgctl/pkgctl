@@ -45,9 +45,13 @@ func listGoOutdated(ctx context.Context) ([]Package, error) {
 	return packages, nil
 }
 
-// goUpdateCommands reinstalls each outdated binary at its latest version, one module at a time,
+// goUpdateCommands reinstalls packageName, or each outdated binary, at its latest version, one module at a time,
 // since go has no command that updates them all and `go install` takes packages from only one module.
-func goUpdateCommands(ctx context.Context) ([]*exec.Cmd, error) {
+func goUpdateCommands(ctx context.Context, packageName string) ([]*exec.Cmd, error) {
+	if packageName != "" {
+		return []*exec.Cmd{ExecContext(ctx, "go", "install", packageName+"@latest")}, nil
+	}
+
 	binaries, err := outdatedGoBinaries(ctx)
 	if err != nil {
 		return nil, err

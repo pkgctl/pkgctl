@@ -17,9 +17,13 @@ import (
 type CheckCmd struct {
 	fs    *flag.FlagSet
 	ifDue bool
+	// tool is the one tool to check, or nil to check every tool.
+	tool tools.Tool
 }
 
-const usage = `Usage: pkgctl check [options]
+const usage = `Usage: pkgctl check [options] [tool]
+
+Check every tool, or one tool named by its command, as ` + "`pkgctl list`" + ` shows it, such as brew or go.
 
 Options:
     --if-due Check only if check_interval has passed since the last check
@@ -40,12 +44,28 @@ func NewCheckCmd() *CheckCmd {
 	return checkCmd
 }
 
+// Parse takes the tool to check from the arguments, every tool when there is none.
 func (c *CheckCmd) Parse(args []string) error {
-	return c.fs.Parse(args)
+	if err := c.fs.Parse(args); err != nil {
+		return err
+	}
+	if c.fs.NArg() > 1 {
+		return fmt.Errorf("unexpected argument %q", c.fs.Arg(1))
+	}
+	if c.fs.NArg() == 0 {
+		return nil
+	}
+
+	tool, err := tools.Find(c.fs.Arg(0))
+	if err != nil {
+		return err
+	}
+	c.tool = tool
+	return nil
 }
 
-// Run asks every installed tool that can report outdated packages for them, prints what each found,
-// and saves the report for `pkgctl status`. If any tool fails, the previous report stays in place.
+// Run asks every installed tool that can report outdated packages, or the one tool named, for them,
+// prints what each found, and saves the report for `pkgctl status`. If any tool fails, the previous report stays in place.
 // If another check is running, or --if-due is set and no check is due, Run leaves the report alone.
 func (c *CheckCmd) Run(ctx context.Context) error {
 	if c.ifDue {
@@ -72,7 +92,17 @@ func (c *CheckCmd) Run(ctx context.Context) error {
 		CheckedAt: time.Now(),
 		Packages:  map[string][]tools.Package{},
 	}
-	for _, tool := range tools.List() {
+	toolsToCheck := tools.List()
+	if c.tool != nil {
+		// Checking one tool replaces only its part of the saved report, and keeps when every tool was last checked.
+		report, err = outdated.Load()
+		if err != nil {
+			return err
+		}
+		report.Clear(c.tool.Name(), "")
+		toolsToCheck = []tools.Tool{c.tool}
+	}
+	for _, tool := range toolsToCheck {
 		if !tool.ReportsOutdated() || !tool.Exists() {
 			continue
 		}

@@ -6,12 +6,13 @@ import (
 )
 
 var Uv = &BasicTool{
-	ToolName:        "uv",
-	ToolCmd:         "uv",
-	ToolDescription: "An extremely fast Python package and project manager",
-	UpdateArgs:      []string{"tool", "upgrade", "--all"},
-	VersionArgs:     []string{"--version"},
-	ListOutdated:    listUvOutdated,
+	ToolName:          "uv",
+	ToolCmd:           "uv",
+	ToolDescription:   "An extremely fast Python package and project manager",
+	UpdateArgs:        []string{"tool", "upgrade", "--all"},
+	UpdatePackageArgs: []string{"tool", "upgrade"},
+	VersionArgs:       []string{"--version"},
+	ListOutdated:      listUvOutdated,
 }
 
 func listUvOutdated(ctx context.Context) ([]Package, error) {

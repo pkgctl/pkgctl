@@ -8,12 +8,13 @@ import (
 )
 
 var Brew = &BasicTool{
-	ToolName:        "Homebrew",
-	ToolCmd:         "brew",
-	ToolDescription: "The missing package manager for macOS (or Linux)",
-	UpdateArgs:      []string{"upgrade", "--yes"},
-	VersionArgs:     []string{"--version"},
-	ListOutdated:    listBrewOutdated,
+	ToolName:          "Homebrew",
+	ToolCmd:           "brew",
+	ToolDescription:   "The missing package manager for macOS (or Linux)",
+	UpdateArgs:        []string{"upgrade", "--yes"},
+	UpdatePackageArgs: []string{"upgrade", "--yes"},
+	VersionArgs:       []string{"--version"},
+	ListOutdated:      listBrewOutdated,
 }
 
 func listBrewOutdated(ctx context.Context) ([]Package, error) {

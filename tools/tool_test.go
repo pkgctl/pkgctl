@@ -16,7 +16,7 @@ func TestUpdateNamesOutdatedPackages(t *testing.T) {
 		},
 	}
 
-	cmds, err := tool.Update(context.Background())
+	cmds, err := tool.Update(context.Background(), "")
 
 	if err != nil {
 		t.Fatal(err)
@@ -39,7 +39,7 @@ func TestUpdateWithNothingOutdated(t *testing.T) {
 		},
 	}
 
-	cmds, err := tool.Update(context.Background())
+	cmds, err := tool.Update(context.Background(), "")
 
 	if err != nil {
 		t.Fatal(err)

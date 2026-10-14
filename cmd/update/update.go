@@ -14,9 +14,16 @@ import (
 
 type UpdateCmd struct {
 	fs *flag.FlagSet
+	// tool is the one tool to update, or nil to update every tool.
+	tool        tools.Tool
+	packageName string
 }
 
-const usage = "Usage: pkgctl update\n"
+const usage = `Usage: pkgctl update [tool [package]]
+
+Update every tool, or one tool named by its command, as ` + "`pkgctl list`" + ` shows it, such as brew or go,
+or one of its packages, as ` + "`pkgctl status`" + ` names it.
+`
 
 func NewUpdateCmd() *UpdateCmd {
 	fs := flag.NewFlagSet("pkgctl update", flag.ExitOnError)
@@ -29,14 +36,36 @@ func NewUpdateCmd() *UpdateCmd {
 	}
 }
 
+// Parse takes the tool and package to update from the arguments, every tool when there are none.
 func (c *UpdateCmd) Parse(args []string) error {
-	return c.fs.Parse(args)
+	if err := c.fs.Parse(args); err != nil {
+		return err
+	}
+	if c.fs.NArg() > 2 {
+		return fmt.Errorf("unexpected argument %q", c.fs.Arg(2))
+	}
+	if c.fs.NArg() == 0 {
+		return nil
+	}
+
+	tool, err := tools.Find(c.fs.Arg(0))
+	if err != nil {
+		return err
+	}
+	c.tool = tool
+	c.packageName = c.fs.Arg(1)
+	return nil
 }
 
 func (c *UpdateCmd) Run(ctx context.Context) error {
+	toolsToUpdate := tools.List()
+	if c.tool != nil {
+		toolsToUpdate = []tools.Tool{c.tool}
+	}
+
 	var updated []string
 	ran := 0
-	for _, tool := range tools.List() {
+	for _, tool := range toolsToUpdate {
 		if ctx.Err() != nil {
 			break
 		}
@@ -47,7 +76,7 @@ func (c *UpdateCmd) Run(ctx context.Context) error {
 		if ran > 0 {
 			fmt.Println()
 		}
-		if runUpdate(ctx, tool) == nil {
+		if runUpdate(ctx, tool, c.packageName) == nil {
 			updated = append(updated, tool.Name())
 		}
 		ran++
@@ -60,7 +89,7 @@ func (c *UpdateCmd) Run(ctx context.Context) error {
 		return err
 	}
 	for _, name := range updated {
-		delete(report.Packages, name)
+		report.Clear(name, c.packageName)
 	}
 	if err := outdated.Save(report); err != nil {
 		return err
@@ -68,13 +97,14 @@ func (c *UpdateCmd) Run(ctx context.Context) error {
 	return ctx.Err()
 }
 
-// runUpdate updates tool's packages in the terminal, between a header naming tool and a status line, and returns the error.
-func runUpdate(ctx context.Context, tool tools.Tool) error {
+// runUpdate updates packageName, or all of tool's packages when it is empty, in the terminal,
+// between a header naming tool and a status line, and returns the error.
+func runUpdate(ctx context.Context, tool tools.Tool, packageName string) error {
 	// Symbols: ✓ ✗ ⟳ ↻
 	fmt.Println(colors.Stdout.Header(tool.Name()))
 
 	start := time.Now()
-	err := update(ctx, tool)
+	err := update(ctx, tool, packageName)
 	duration := time.Since(start).Round(100 * time.Millisecond)
 
 	if err != nil {
@@ -85,9 +115,9 @@ func runUpdate(ctx context.Context, tool tools.Tool) error {
 	return nil
 }
 
-// update runs the commands that update tool's packages, in order, stopping at the first failure.
-func update(ctx context.Context, tool tools.Tool) error {
-	cmds, err := tool.Update(ctx)
+// update runs the commands that update packageName, or all of tool's packages, in order, stopping at the first failure.
+func update(ctx context.Context, tool tools.Tool, packageName string) error {
+	cmds, err := tool.Update(ctx, packageName)
 	if err != nil {
 		return err
 	}

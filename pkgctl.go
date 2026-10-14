@@ -17,10 +17,10 @@ import (
 const usage = `Usage: pkgctl <command> [options]
 
 Commands:
-  check     Check for outdated packages
+  check     Check for outdated packages, in every tool or one
   list      List all tools
   status    Show the outdated packages found by the last check
-  update    Update all tools
+  update    Update all tools, or one tool or package
   version   Print the version
 `
 
@@ -73,8 +73,10 @@ func main() {
 		os.Exit(0)
 	}
 
-	command.Parse(args[1:])
-	err := command.Run(ctx)
+	err := command.Parse(args[1:])
+	if err == nil {
+		err = command.Run(ctx)
+	}
 	if ctx.Err() != nil {
 		// Interrupted: stop quietly, with the shell's usual status for Ctrl-C.
 		os.Exit(130)

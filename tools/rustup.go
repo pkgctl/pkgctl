@@ -6,12 +6,13 @@ import (
 )
 
 var RustUp = &BasicTool{
-	ToolName:        "rustup",
-	ToolCmd:         "rustup",
-	ToolDescription: "The Rust toolchain installer",
-	UpdateArgs:      []string{"update"},
-	VersionArgs:     []string{"--version"},
-	ListOutdated:    listRustupOutdated,
+	ToolName:          "rustup",
+	ToolCmd:           "rustup",
+	ToolDescription:   "The Rust toolchain installer",
+	UpdateArgs:        []string{"update"},
+	UpdatePackageArgs: []string{"update"},
+	VersionArgs:       []string{"--version"},
+	ListOutdated:      listRustupOutdated,
 }
 
 func listRustupOutdated(ctx context.Context) ([]Package, error) {

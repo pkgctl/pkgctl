@@ -7,12 +7,13 @@ import (
 )
 
 var Mas = &BasicTool{
-	ToolName:        "mas",
-	ToolCmd:         "mas",
-	ToolDescription: "Mac App Store command-line interface",
-	UpdateArgs:      []string{"update"},
-	VersionArgs:     []string{"version"},
-	ListOutdated:    listMasOutdated,
+	ToolName:          "mas",
+	ToolCmd:           "mas",
+	ToolDescription:   "Mac App Store command-line interface",
+	UpdateArgs:        []string{"update"},
+	UpdatePackageArgs: []string{"update"},
+	VersionArgs:       []string{"version"},
+	ListOutdated:      listMasOutdated,
 }
 
 func listMasOutdated(ctx context.Context) ([]Package, error) {

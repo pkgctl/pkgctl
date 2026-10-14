@@ -6,12 +6,13 @@ import (
 )
 
 var Pipx = &BasicTool{
-	ToolName:        "pipx",
-	ToolCmd:         "pipx",
-	ToolDescription: "Install and run Python applications in isolated environments",
-	UpdateArgs:      []string{"upgrade-all"},
-	VersionArgs:     []string{"--version"},
-	ListOutdated:    listPipxOutdated,
+	ToolName:          "pipx",
+	ToolCmd:           "pipx",
+	ToolDescription:   "Install and run Python applications in isolated environments",
+	UpdateArgs:        []string{"upgrade-all"},
+	UpdatePackageArgs: []string{"upgrade"},
+	VersionArgs:       []string{"--version"},
+	ListOutdated:      listPipxOutdated,
 }
 
 func listPipxOutdated(ctx context.Context) ([]Package, error) {

@@ -47,9 +47,15 @@ Update all packages managed by `pkgctl`'s supported package managers.
 pkgctl update
 ```
 
+Name a tool by its command, as `pkgctl list` shows it, to update only that tool, and add a package, as `pkgctl status` names it, to update only that package:
+
+```shell
+pkgctl update go golang.org/x/tools/gopls
+```
+
 ### Outdated Packages
 
-`pkgctl check` asks every supported package manager except ASDF which installed packages have a newer version, prints them, and saves the answer. `pkgctl status` lists the saved answer the same way without checking again. `pkgctl status --short` prints only a one-line summary, or nothing when everything is current, so it is quick enough to run whenever a shell starts. Add it to your shell's startup:
+`pkgctl check` asks every supported package manager except ASDF which installed packages have a newer version, prints them, and saves the answer. `pkgctl check go` asks only the one named, as `pkgctl list` shows it. `pkgctl status` lists the saved answer the same way without checking again. `pkgctl status --short` prints only a one-line summary, or nothing when everything is current, so it is quick enough to run whenever a shell starts. Add it to your shell's startup:
 
 ```fish
 # ~/.config/fish/config.fish, after PATH is set

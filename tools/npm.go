@@ -7,12 +7,13 @@ import (
 )
 
 var Npm = &BasicTool{
-	ToolName:        "npm",
-	ToolCmd:         "npm",
-	ToolDescription: "The package manager for JavaScript",
-	UpdateArgs:      []string{"update", "--global"},
-	VersionArgs:     []string{"--version"},
-	ListOutdated:    listNpmOutdated,
+	ToolName:          "npm",
+	ToolCmd:           "npm",
+	ToolDescription:   "The package manager for JavaScript",
+	UpdateArgs:        []string{"update", "--global"},
+	UpdatePackageArgs: []string{"update", "--global"},
+	VersionArgs:       []string{"--version"},
+	ListOutdated:      listNpmOutdated,
 }
 
 func listNpmOutdated(ctx context.Context) ([]Package, error) {

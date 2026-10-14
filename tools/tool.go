@@ -31,9 +31,12 @@ var toolList = []Tool{
 
 type Tool interface {
 	Name() string
+	// Command returns the tool's command, such as "brew", which names the tool for `pkgctl update`.
+	Command() string
 	Exists() bool
-	// Update returns the commands that update the tool's packages, to run in order. It returns none if there is nothing to update.
-	Update(ctx context.Context) ([]*exec.Cmd, error)
+	// Update returns the commands that update packageName, as Outdated names it, or every package when it is empty,
+	// to run in order. It returns none if there is nothing to update.
+	Update(ctx context.Context, packageName string) ([]*exec.Cmd, error)
 	// UpdateCommand returns the command to give the user for updating the tool's packages, such as "rustup update".
 	UpdateCommand() string
 	// ReportsOutdated reports whether Outdated can list the tool's outdated packages.
@@ -47,6 +50,16 @@ type Tool interface {
 
 func List() []Tool {
 	return toolList
+}
+
+// Find returns the tool whose command is command, such as "brew".
+func Find(command string) (Tool, error) {
+	for _, tool := range toolList {
+		if tool.Command() == command {
+			return tool, nil
+		}
+	}
+	return nil, fmt.Errorf("unknown tool %q; run `pkgctl list` to see them", command)
 }
 
 // Package is an installed package that has a newer version available.
@@ -77,12 +90,12 @@ type BasicTool struct {
 	// to UpdatePackageArgs instead, for a tool whose command can't update them all, or fails with none installed
 	// eg. []string{"upgrade"}
 	UpdateArgs []string
-	// UpdatePackageArgs are the arguments to pass to the tool, followed by package names, to update those packages
+	// UpdatePackageArgs are the arguments to pass to the tool, followed by a package name, to update that package
 	// eg. []string{"upgrade"}
 	UpdatePackageArgs []string
-	// UpdateCommands lists the commands that update the tool's packages,
-	// for a tool without one command that updates them all, in place of [BasicTool.UpdateArgs]
-	UpdateCommands func(ctx context.Context) ([]*exec.Cmd, error)
+	// UpdateCommands lists the commands that update a package, or every package when packageName is empty,
+	// for a tool without one command that updates them all, in place of [BasicTool.UpdateArgs] and [BasicTool.UpdatePackageArgs]
+	UpdateCommands func(ctx context.Context, packageName string) ([]*exec.Cmd, error)
 	// UpdateHint is the command to give the user for a tool with UpdateCommands
 	// eg. "go install <package>@latest"
 	UpdateHint string
@@ -96,6 +109,10 @@ type BasicTool struct {
 
 func (b *BasicTool) Name() string {
 	return b.ToolName
+}
+
+func (b *BasicTool) Command() string {
+	return b.ToolCmd
 }
 
 func (b *BasicTool) Description() string {
@@ -112,9 +129,12 @@ func (b *BasicTool) Exists() bool {
 	return err == nil && cmd.ProcessState.ExitCode() == 0
 }
 
-func (b *BasicTool) Update(ctx context.Context) ([]*exec.Cmd, error) {
+func (b *BasicTool) Update(ctx context.Context, packageName string) ([]*exec.Cmd, error) {
 	if b.UpdateCommands != nil {
-		return b.UpdateCommands(ctx)
+		return b.UpdateCommands(ctx, packageName)
+	}
+	if packageName != "" {
+		return []*exec.Cmd{b.command(ctx, append(slices.Clone(b.UpdatePackageArgs), packageName)...)}, nil
 	}
 	if b.UpdateArgs != nil {
 		return []*exec.Cmd{b.command(ctx, b.UpdateArgs...)}, nil
