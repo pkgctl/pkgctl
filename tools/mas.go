@@ -14,6 +14,7 @@ var Mas = &BasicTool{
 	UpdatePackageArgs: []string{"update"},
 	VersionArgs:       []string{"version"},
 	ListOutdated:      listMasOutdated,
+	UpdateNeedsSudo:   true,
 }
 
 func listMasOutdated(ctx context.Context) ([]Package, error) {

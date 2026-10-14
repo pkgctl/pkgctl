@@ -34,6 +34,8 @@ type Tool interface {
 	// Command returns the tool's command, such as "brew", which names the tool for `pkgctl update`.
 	Command() string
 	Exists() bool
+	// NeedsSudo reports whether updating the tool's packages asks for the administrator password through sudo.
+	NeedsSudo() bool
 	// Update returns the commands that update packageName, as Outdated names it, or every package when it is empty,
 	// to run in order. It returns none if there is nothing to update.
 	Update(ctx context.Context, packageName string) ([]*exec.Cmd, error)
@@ -105,6 +107,8 @@ type BasicTool struct {
 	// ListOutdated lists the installed packages that have a newer version available,
 	// or is nil if the tool can't report them
 	ListOutdated func(ctx context.Context) ([]Package, error)
+	// UpdateNeedsSudo is whether updating the tool's packages asks for the administrator password through sudo
+	UpdateNeedsSudo bool
 }
 
 func (b *BasicTool) Name() string {
@@ -163,6 +167,10 @@ func (b *BasicTool) UpdateCommand() string {
 
 func (b *BasicTool) ReportsOutdated() bool {
 	return b.ListOutdated != nil
+}
+
+func (b *BasicTool) NeedsSudo() bool {
+	return b.UpdateNeedsSudo
 }
 
 func (b *BasicTool) Outdated(ctx context.Context) ([]Package, error) {

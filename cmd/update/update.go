@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -67,6 +68,9 @@ func (c *UpdateCmd) Run(ctx context.Context) error {
 		toolsToUpdate = []tools.Tool{c.tool}
 	}
 
+	stopRenewing, sudoErr := c.askForSudo(ctx, toolsToUpdate)
+	defer stopRenewing()
+
 	var updated, failed []string
 	ran := 0
 	for _, tool := range toolsToUpdate {
@@ -80,7 +84,7 @@ func (c *UpdateCmd) Run(ctx context.Context) error {
 		if ran > 0 {
 			fmt.Println()
 		}
-		if runUpdate(ctx, tool, c.packageName) == nil {
+		if runUpdate(ctx, tool, c.packageName, sudoErr) == nil {
 			updated = append(updated, tool.Name())
 		} else {
 			failed = append(failed, tool.Name())
@@ -109,14 +113,66 @@ func (c *UpdateCmd) Run(ctx context.Context) error {
 	return nil
 }
 
+// How often an update renews the administrator password sudo caches, well within sudo's default of five minutes.
+const sudoRenewal = time.Minute
+
+// askForSudo asks for the administrator password up front when a tool will need it, so the update doesn't stop partway
+// to ask, then renews it until the returned function is called. A tool needs it when it has outdated packages to update.
+// When it can't get the password, it returns why, and the tools that need it fail with that error.
+func (c *UpdateCmd) askForSudo(ctx context.Context, toolsToUpdate []tools.Tool) (stopRenewing func(), err error) {
+	var needing []string
+	for _, tool := range toolsToUpdate {
+		if !tool.NeedsSudo() || !tool.Exists() {
+			continue
+		}
+		if c.packageName == "" {
+			packages, err := tool.Outdated(ctx)
+			if err != nil {
+				return func() {}, fmt.Errorf("checking %v: %w", tool.Name(), tools.WithStderr(err))
+			}
+			if len(packages) == 0 {
+				continue
+			}
+		}
+		needing = append(needing, tool.Name())
+	}
+	if len(needing) == 0 {
+		return func() {}, nil
+	}
+
+	fmt.Printf("%v needs the administrator password to update.\n", strings.Join(needing, ", "))
+	sudo := exec.CommandContext(ctx, "sudo", "--validate")
+	sudo.Stdin, sudo.Stdout, sudo.Stderr = os.Stdin, os.Stdout, os.Stderr
+	if err := sudo.Run(); err != nil {
+		return func() {}, fmt.Errorf("asking for the administrator password: %w", err)
+	}
+	fmt.Println()
+
+	done := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(sudoRenewal)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-done:
+				return
+			case <-ticker.C:
+				// A renewal that fails only means sudo asks again when a tool needs it.
+				_ = exec.Command("sudo", "--non-interactive", "--validate").Run()
+			}
+		}
+	}()
+	return func() { close(done) }, nil
+}
+
 // runUpdate updates packageName, or all of tool's packages when it is empty, in the terminal,
 // between a header naming tool and a status line, and returns the error.
-func runUpdate(ctx context.Context, tool tools.Tool, packageName string) error {
+func runUpdate(ctx context.Context, tool tools.Tool, packageName string, sudoErr error) error {
 	// Symbols: ✓ ✗ ⟳ ↻
 	fmt.Println(colors.Stdout.Header(tool.Name()))
 
 	start := time.Now()
-	err := update(ctx, tool, packageName)
+	err := update(ctx, tool, packageName, sudoErr)
 	duration := time.Since(start).Round(100 * time.Millisecond)
 
 	if err != nil {
@@ -128,7 +184,11 @@ func runUpdate(ctx context.Context, tool tools.Tool, packageName string) error {
 }
 
 // update runs the commands that update packageName, or all of tool's packages, in order, stopping at the first failure.
-func update(ctx context.Context, tool tools.Tool, packageName string) error {
+// A tool that needs the administrator password fails with sudoErr when pkgctl couldn't get it.
+func update(ctx context.Context, tool tools.Tool, packageName string, sudoErr error) error {
+	if tool.NeedsSudo() && sudoErr != nil {
+		return sudoErr
+	}
 	cmds, err := tool.Update(ctx, packageName)
 	if err != nil {
 		return err
