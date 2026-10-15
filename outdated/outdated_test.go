@@ -3,6 +3,7 @@ package outdated
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/pkgctl/pkgctl/tools"
 )
@@ -56,6 +57,28 @@ func TestClearPackageBeforeAnyCheck(t *testing.T) {
 
 	if len(report.Packages["Go"]) != 0 {
 		t.Errorf("Expected no Go packages, got %v", report.Packages["Go"])
+	}
+}
+
+func TestUpToDate(t *testing.T) {
+	report := Report{
+		CheckedAt: time.Now(),
+		Packages:  map[string][]tools.Package{"Go": {{Name: "golang.org/x/tools/gopls"}}},
+	}
+
+	expected := map[*tools.Tool]bool{tools.Brew: true, tools.GoBinaries: false, tools.Asdf: false}
+	for tool, upToDate := range expected {
+		if report.UpToDate(tool) != upToDate {
+			t.Errorf("Expected UpToDate(%v) to be %v", tool.Name, upToDate)
+		}
+	}
+}
+
+func TestUpToDateBeforeAnyCheck(t *testing.T) {
+	report := Report{Packages: map[string][]tools.Package{}}
+
+	if report.UpToDate(tools.Brew) {
+		t.Error("Expected Homebrew not to be up to date before any check")
 	}
 }
 

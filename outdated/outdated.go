@@ -35,6 +35,12 @@ func (r Report) Clear(toolName, packageName string) {
 	})
 }
 
+// UpToDate reports whether the check found no outdated packages for tool,
+// which is false for a tool that can't report them, and before any check has run.
+func (r Report) UpToDate(tool *tools.Tool) bool {
+	return !r.CheckedAt.IsZero() && tool.ListOutdated != nil && len(r.Packages[tool.Name]) == 0
+}
+
 // Summary counts the report's outdated packages in one line, or returns "" if there are none.
 func (r Report) Summary() string {
 	total := 0

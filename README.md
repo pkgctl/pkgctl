@@ -6,7 +6,7 @@ A package manager for package managers.
 
 `pkgctl` is a package manager that itself doesn't actually manage any individual packages. It is designed to be a single executable that can be used to, primarily, update the packages managed by other package managers.
 
-No need to remember the exact command to update a package manager's packages. Just run `pkgctl update` and it will update all the package managers that it is aware of.
+No need to remember the exact command to update a package manager's packages. Just run `pkgctl update` and it will update every package manager that has outdated packages.
 
 ## Supported Package Managers
 
@@ -41,10 +41,16 @@ brew services start pkgctl
 
 ### Global Package Update
 
-Update all packages managed by `pkgctl`'s supported package managers.
+Update the package managers that the last check found outdated packages for, as `pkgctl status` lists them. ASDF, which pkgctl can't check, is always updated, and so is every package manager until the first check.
 
 ```shell
 pkgctl update
+```
+
+Add `--all` to update every package manager, whether or not the last check found outdated packages:
+
+```shell
+pkgctl update --all
 ```
 
 Name a tool by its command, as `pkgctl list` shows it, to update only that tool, and add a package, as `pkgctl status` names it, to update only that package:

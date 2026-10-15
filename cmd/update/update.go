@@ -2,6 +2,7 @@ package update
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -16,16 +17,21 @@ import (
 )
 
 type UpdateCmd struct {
-	fs *flag.FlagSet
-	// tool is the one tool to update, or nil to update every tool.
+	fs  *flag.FlagSet
+	all bool
+	// tool is the one tool to update, or nil to update those the last check didn't find up to date, or with all, every tool.
 	tool        *tools.Tool
 	packageName string
 }
 
-const usage = `Usage: pkgctl update [tool [package]]
+const usage = `Usage: pkgctl update [options] [tool [package]]
 
-Update every tool, or one tool named by its command, as ` + "`pkgctl list`" + ` shows it, such as brew or go,
-or one of its packages, as ` + "`pkgctl status`" + ` names it.
+Update the tools the last check found outdated packages for or couldn't check, or with --all, every tool.
+Name a tool by its command, as ` + "`pkgctl list`" + ` shows it, such as brew or go, to update only that tool,
+and one of its packages, as ` + "`pkgctl status`" + ` names it, to update only that package.
+
+Options:
+    --all Update every tool, whether or not the last check found outdated packages
 `
 
 func NewUpdateCmd() *UpdateCmd {
@@ -34,36 +40,67 @@ func NewUpdateCmd() *UpdateCmd {
 		fmt.Fprintf(os.Stderr, "%s\n", usage)
 	}
 
-	return &UpdateCmd{
+	updateCmd := &UpdateCmd{
 		fs: fs,
 	}
+
+	fs.BoolVar(&updateCmd.all, "all", false, "Update every tool, whether or not the last check found outdated packages")
+
+	return updateCmd
 }
 
-// Parse takes the tool and package to update from the arguments, every tool when there are none.
+// Parse takes the tool and package to update from the arguments, if any, with flags before or after them.
 func (c *UpdateCmd) Parse(args []string) error {
-	if err := c.fs.Parse(args); err != nil {
-		return err
+	// The flag package stops at the first argument that isn't a flag, so parse the flags after each one too.
+	var positional []string
+	for {
+		if err := c.fs.Parse(args); err != nil {
+			return err
+		}
+		if c.fs.NArg() == 0 {
+			break
+		}
+		positional = append(positional, c.fs.Arg(0))
+		args = c.fs.Args()[1:]
 	}
-	if c.fs.NArg() > 2 {
-		return fmt.Errorf("unexpected argument %q", c.fs.Arg(2))
+	if len(positional) > 2 {
+		return fmt.Errorf("unexpected argument %q", positional[2])
 	}
-	if c.fs.NArg() == 0 {
+	if len(positional) == 0 {
 		return nil
 	}
+	if c.all {
+		return errors.New("--all updates every tool, so it can't take a tool")
+	}
 
-	tool, err := tools.Find(c.fs.Arg(0))
+	tool, err := tools.Find(positional[0])
 	if err != nil {
 		return err
 	}
 	c.tool = tool
-	c.packageName = c.fs.Arg(1)
+	if len(positional) == 2 {
+		c.packageName = positional[1]
+	}
 	return nil
 }
 
 func (c *UpdateCmd) Run(ctx context.Context) error {
-	candidates := tools.List()
-	if c.tool != nil {
+	var candidates []*tools.Tool
+	switch {
+	case c.tool != nil:
 		candidates = []*tools.Tool{c.tool}
+	case c.all:
+		candidates = tools.List()
+	default:
+		lastCheck, err := outdated.Load()
+		if err != nil {
+			return err
+		}
+		for _, tool := range tools.List() {
+			if !lastCheck.UpToDate(tool) {
+				candidates = append(candidates, tool)
+			}
+		}
 	}
 	var toolsToUpdate []*tools.Tool
 	for _, tool := range candidates {
@@ -73,6 +110,10 @@ func (c *UpdateCmd) Run(ctx context.Context) error {
 	}
 	if c.tool != nil && len(toolsToUpdate) == 0 {
 		return fmt.Errorf("%v isn't installed", c.tool.Name)
+	}
+	if len(toolsToUpdate) == 0 {
+		fmt.Println(colors.Stdout.Green("Everything was up to date at the last check.") + " Run `pkgctl update --all` to update every tool anyway.")
+		return nil
 	}
 
 	stopRenewing, sudoErr := c.askForSudo(ctx, toolsToUpdate)
