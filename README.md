@@ -63,7 +63,7 @@ When mas has apps to update, `pkgctl update` asks for the administrator password
 
 ### Outdated Packages
 
-`pkgctl check` asks every supported package manager except ASDF which installed packages have a newer version, prints them, and saves the answer. `pkgctl check go` asks only the one named, as `pkgctl list` shows it. `pkgctl status` lists the saved answer the same way without checking again. `pkgctl status --short` prints only a one-line summary, or nothing when everything is current, so it is quick enough to run whenever a shell starts. Add it to your shell's startup:
+`pkgctl check` asks every supported package manager except ASDF, all at once, which installed packages have a newer version, prints them, and saves the answer. `pkgctl check go` asks only the one named, as `pkgctl list` shows it. `pkgctl status` lists the saved outdated packages without checking again. `pkgctl status --short` prints only a one-line summary, or nothing when everything is current, so it is quick enough to run whenever a shell starts. Add it to your shell's startup:
 
 ```fish
 # ~/.config/fish/config.fish, after PATH is set
@@ -98,4 +98,4 @@ Settings live in `~/.config/pkgctl/config.json`. The file is optional, and each 
 
 - `check_interval`: how often to check for outdated packages in the background, as a duration such as `30m` or `6h`. Defaults to `24h`.
 
-pkgctl colors its output only on a terminal. Set `NO_COLOR` to any value to turn color off there too.
+pkgctl colors its output only on a terminal, and not on a dumb one (`TERM=dumb`). Set `NO_COLOR` to any value to turn color off there too.

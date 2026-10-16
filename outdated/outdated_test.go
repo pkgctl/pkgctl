@@ -27,7 +27,7 @@ func TestDescribeWithoutVersions(t *testing.T) {
 
 	description := Describe(tools.Fisher, packages)
 
-	expected := "  pure-fish/pure\n↑ 1 outdated. Run `fisher update`.\n"
+	expected := "  pure-fish/pure\nRun `fisher update`.\n"
 	if description != expected {
 		t.Errorf("Expected %q, got %q", expected, description)
 	}
@@ -87,7 +87,7 @@ func TestDescribeWithDisplayName(t *testing.T) {
 
 	description := Describe(tools.Mas, packages)
 
-	expected := "  Tailscale (io.tailscale.ipn.macos) 1.102.4 → 1.104.1\n↑ 1 outdated. Run `mas update`.\n"
+	expected := "  Tailscale (io.tailscale.ipn.macos) 1.102.4 → 1.104.1\nRun `mas update`.\n"
 	if description != expected {
 		t.Errorf("Expected %q, got %q", expected, description)
 	}

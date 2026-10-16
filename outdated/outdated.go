@@ -79,7 +79,7 @@ func Describe(tool *tools.Tool, packages []tools.Package) string {
 		}
 		description.WriteString("\n")
 	}
-	fmt.Fprintf(&description, "%v %v outdated. Run `%v`.\n", colors.Stdout.Yellow("↑"), len(packages), tool.UpdateCommand())
+	fmt.Fprintf(&description, "Run `%v`.\n", tool.UpdateCommand())
 	return description.String()
 }
 
