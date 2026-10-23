@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/icon.svg" alt="" width="128"></p>
+
 # pkgctl
 
 A package manager for package managers.
